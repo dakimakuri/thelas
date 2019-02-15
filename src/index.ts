@@ -52,7 +52,13 @@ function prettyDiff(diff: any, name = '') {
 
     let input = await fs.readJson('input.json');
     let group = new ResourceGroup();
-    group.state = await fs.readJson('state.json');
+    try {
+      group.state = await fs.readJson('state.json');
+    } catch (err) {
+      if (_.get(err, 'code') !== 'ENOENT') {
+        throw err;
+      }
+    }
     let updates = await group.diff(input);
 
     let different = false;
