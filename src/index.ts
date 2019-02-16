@@ -96,8 +96,11 @@ function ref(name: string, attribute: string) {
     }
     if (different) {
       await confirm('Apply these changes?');
-      await group.apply(updates);
-      await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+      try {
+        await group.apply(updates);
+      } finally {
+        await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+      }
     } else {
       console.log(chalk.green('Nothing to do.'));
     }

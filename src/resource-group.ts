@@ -45,6 +45,7 @@ export class ResourceGroup {
       if (this.state[name]) {
         resource.state = this.state[name];
       }
+      await resource.sync();
       depends[name] = [];
       if (input[name] != null) {
         iterateObject(input[name], (obj: any, path: string) => {
@@ -96,7 +97,9 @@ export class ResourceGroup {
             let targetName = obj['$ref'].substr(0, obj['$ref'].lastIndexOf(':'));
             let targetAttr = obj['$ref'].substr(obj['$ref'].lastIndexOf(':') + 1);
             let targetResource = resources[targetName];
-            if (!this.state._original || !this.state._original[name]) {
+            if (resource.data === null || targetResource.data === null) {
+              return () => _.get(targetResource.attributes, targetAttr);
+            } else if (!this.state._original || !this.state._original[name]) {
               return () => _.get(targetResource.attributes, targetAttr);
             } else {
               if (!_.isEqual(_.get(this.state._original[name], path), obj)) {
@@ -123,11 +126,9 @@ export class ResourceGroup {
         name,
         order: createOrder.indexOf(name)
       });
-      await resource.sync();
       diffs[name] = resource.diff(input[name]);
     }
     for (let update of updates) {
-      await update.resource.sync();
       update.diff = update.resource.diff(update.data);
     }
     return updates;
