@@ -156,11 +156,6 @@ export namespace Product {
     data = _.clone(data);
     if (attributes) {
       data.id = attributes.id;
-      for (let i = 0; i < data.images.length; ++i) {
-        if (attributes.images) {
-          data.images[i].id = attributes.images[i];
-        }
-      }
       for (let i = 0; i < data.options.length; ++i) {
         data.options[i].id = attributes.options[i];
       }
@@ -172,12 +167,8 @@ export namespace Product {
   }
 
   function attributes(product: any) {
-    let images: number[] = [];
     let options: number[] = [];
     let variants: number[] = [];
-    for (let image of product.images) {
-      images.push(image.id);
-    }
     for (let option of product.options) {
       options.push(option.id);
     }
@@ -201,6 +192,14 @@ export namespace ProductImage {
     attachment: {
       type: 'string',
       required: true
+    },
+    variant_ids: {
+      type: 'array',
+      default: [],
+      items: {
+        type: 'number',
+        required: true
+      }
     }
   };
 
