@@ -1,4 +1,4 @@
-import { Product, ProductImage } from './shopify';
+import { Product, ProductImage, ProductListing } from './shopify';
 import { Null } from './null';
 import { File } from './file';
 import { Resource } from './resource';
@@ -28,7 +28,7 @@ export class ResourceGroup {
     let diffs: any = {};
     let depends: any = {};
     let updates: any[] = [];
-    let resourceTypes = { Null: Null, File: File, Product: Product, ProductImage: ProductImage };
+    let resourceTypes = { Null: Null, File: File, Product: Product, ProductImage: ProductImage, ProductListing: ProductListing };
     let found = [];
     for (let key in this.state) {
       if (key.length > 0 && key[0] === '_') {
@@ -40,6 +40,9 @@ export class ResourceGroup {
     }
     for (let name in input) {
       let type = name.substr(0, name.indexOf('.'));
+      if (!resourceTypes[type]) {
+        throw new Error('Unknown type: ' + type);
+      }
       let resource = new Resource(resourceTypes[type], name);
       resources[name] = resource;
       if (this.state[name]) {
