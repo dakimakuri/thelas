@@ -1,18 +1,5 @@
 import { Args } from './args';
-
-function verifyArgs(info: any, data: any) {
-  if (!data) return;
-  for (let key in info) {
-    let entry = info[key];
-    if (entry.required) {
-      if (data[key] == null) {
-        throw new Error('Key required: ' + key);
-      }
-    } else if (data[key] == null) {
-      data[key] = entry.default;
-    }
-  }
-}
+import * as _ from 'lodash';
 
 export class Resource {
   private data = null;
@@ -55,7 +42,7 @@ export class Resource {
     }
     if (diff.create) {
       this.attributes = await this.provider.create({
-        data: diff.create,
+        data: Args.applyCalculations(diff.create),
         changes: diff.changes,
         attributes: this.attributes
       });
@@ -64,12 +51,23 @@ export class Resource {
     if (diff.update) {
       this.attributes = await this.provider.update({
         from: diff.update.from,
-        to: diff.update.to,
+        to: Args.applyCalculations(diff.update.to),
         changes: diff.changes,
         attributes: this.attributes
       });
       this.data = diff.update.to;
     }
     return this.attributes;
+  }
+
+  invalidatedAttributes(diff: any) {
+    let attrs: string[] = [];
+    for (let change of diff.changes) {
+      attrs = _.concat(attrs, change.schema.attributes);
+      if (change.schema.fragile) {
+        return null;
+      }
+    }
+    return _.uniq(attrs);
   }
 }

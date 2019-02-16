@@ -17,7 +17,11 @@ function type(o: any) {
 
 function recursiveKeys(o: any, path: string[] = [], schemaPath: string[] = []) {
   let keys: any[] = [];
-  if (o instanceof Array) {
+  if (o instanceof Function) {
+    if (path.length !== 0) {
+      keys.push({ path: path.join('.'), schema: schemaPath.join('.') });
+    }
+  } else if (o instanceof Array) {
     for (let i = 0; i < o.length; ++i) {
       keys = _.concat(keys, recursiveKeys(o[i], _.concat(path, String(i)), _.concat(schemaPath, 'items')));
     }
@@ -39,6 +43,7 @@ export class Args {
   fragile?: boolean;
   default?: any;
   allowNull?: boolean;
+  attributes?: string[];
 
   properties?: { [ key: string ]: Args };
   items?: Args;
@@ -58,8 +63,18 @@ export class Args {
     if (path.length === 0 && args.type !== 'object') {
       err(`Root 'type' must be an object.`, 'type');
     }
+    if (args.attributes != null) {
+      if (type(args.attributes) !== 'array') {
+        err(`List of 'attributes' must be an array.`, 'attributes');
+      }
+      for (let i = 0; i < args.attributes.length; ++i) {
+        if (type(args.attributes[i]) !== 'string') {
+          err(`Element of 'attributes' must be a string.`, ['attributes', String(i)]);
+        }
+      }
+    }
     if (args.type === 'object') {
-      let additional = _.pullAll(_.keys(args), ['type', 'properties', 'allowNull']);
+      let additional = _.pullAll(_.keys(args), ['type', 'properties', 'allowNull', 'attributes']);
       if (additional.length > 0) {
         err(`Additional property '${additional[0]}' not allowed on type '${args.type}'.`, additional[0]);
       }
@@ -70,7 +85,7 @@ export class Args {
         Args.verify(args.properties[key], _.concat(path, [ 'properties', key ]));
       }
     } else if (args.type === 'array') {
-      let additional = _.pullAll(_.keys(args), ['type', 'items', 'default', 'allowNull']);
+      let additional = _.pullAll(_.keys(args), ['type', 'items', 'default', 'allowNull', 'attributes']);
       if (additional.length > 0) {
         err(`Additional property '${additional[0]}' not allowed on type '${args.type}'.`, additional[0]);
       }
@@ -79,7 +94,7 @@ export class Args {
       }
       Args.verify(args.items, _.concat(path, [ 'items' ]));
     } else if (args.type === 'string' || args.type === 'number' || args.type === 'boolean') {
-      let additional = _.pullAll(_.keys(args), ['type', 'required', 'default', 'fragile', 'allowNull']);
+      let additional = _.pullAll(_.keys(args), ['type', 'required', 'default', 'fragile', 'allowNull', 'attributes']);
       if (additional.length > 0) {
         err(`Additional property '${additional[0]}' not allowed on type '${args.type}'.`, additional[0]);
       }
@@ -121,7 +136,9 @@ export class Args {
       schema.items = Args.toSchema(args.items);
     }
     if (args.allowNull) {
-      schema.type = ['null', schema.type];
+      schema.type = ['null', schema.type, 'function'];
+    } else {
+      schema.type = [schema.type, 'function'];
     }
     return schema;
   }
@@ -143,7 +160,14 @@ export class Args {
     let keys = _.uniqBy(_.concat(recursiveKeys(previous), recursiveKeys(updated)), item => item.path);
     let fragile = [];
     if (previous && updated) {
-      keys = _.filter(keys, key => _.get(previous, key.path) != _.get(updated, key.path));
+      keys = _.filter(keys, key => {
+        let update = _.get(updated, key.path);
+        if (update instanceof Function) {
+          return true;
+        } else {
+          return _.get(previous, key.path) != update;
+        }
+      });
     }
     let changes: any[] = [];
     let broken = false;
@@ -202,6 +226,21 @@ export class Args {
     obj = obj == null ? args.default : obj;
     if (!obj && args.allowNull) {
       obj = null;
+    }
+    return obj;
+  }
+
+  static applyCalculations(obj: any) {
+    if (obj instanceof Function) {
+      return obj();
+    } else if (obj instanceof Array) {
+      for (let i = 0; i < obj.length; ++i) {
+        obj[i] = Args.applyCalculations(obj[i]);
+      }
+    } else if (obj instanceof Object) {
+      for (let k in obj) {
+        obj[k] = Args.applyCalculations(obj[k]);
+      }
     }
     return obj;
   }

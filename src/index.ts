@@ -2,6 +2,9 @@ import * as fs from 'fs-extra';
 import * as _ from 'lodash';
 import * as readline from 'readline';
 import { ResourceGroup } from './resource-group';
+import { Resource } from './resource';
+import { Null } from './null';
+import { Args } from './args';
 const chalk = require('chalk');
 const makeError = require('make-error');
 
@@ -19,6 +22,18 @@ function confirm(q: string) {
   });
 }
 
+function prettyType(obj: any) {
+  if (obj instanceof Function) {
+    return '(calculated)';
+  } else {
+    let str = String(obj);
+    if (str.length > 40) {
+      str = str.substr(0, 40) + '...';
+    }
+    return '"' + str + '"';
+  }
+}
+
 function prettyDiff(diff: any, name = '') {
   if (name) name = ' (' + name + ')';
   if (diff.create && diff.destroy) {
@@ -26,13 +41,13 @@ function prettyDiff(diff: any, name = '') {
     for (let change of diff.changes) {
       let tag = '';
       if (change.schema.fragile) tag += chalk.red(' (requires new resource)');
-      console.log('  ' + chalk.yellow('~ ' + change.path) + ' ("' + _.get(diff.destroy, change.path) + '" => "' + _.get(diff.create, change.path) + '")' + tag);
+      console.log('  ' + chalk.yellow('~ ' + change.path + ':') + ' ' + prettyType(_.get(diff.destroy, change.path)) + ' => ' + prettyType(_.get(diff.create, change.path)) + tag);
     }
     console.log();
   } else if (diff.create) {
     console.log(chalk.green('+ create') + name);
     for (let change of diff.changes) {
-      console.log('  ' + chalk.green('+ ' + change.path) + ' ("' + _.get(diff.create, change.path) + '")');
+      console.log('  ' + chalk.green('+ ' + change.path + ':') + ' ' + prettyType(_.get(diff.create, change.path)));
     }
     console.log();
   } else if (diff.destroy) {
@@ -41,10 +56,19 @@ function prettyDiff(diff: any, name = '') {
   } else if (diff.update) {
     console.log(chalk.yellow('~ update') + name);
     for (let change of diff.changes) {
-      console.log('  ' + chalk.yellow('~ ' + change.path) + ' ("' + _.get(diff.update.from, change.path) + '" => "' + _.get(diff.update.to, change.path) + '")');
+      console.log('  ' + chalk.yellow('~ ' + change.path + ':') + ' ' + prettyType(_.get(diff.update.from, change.path)) + ' => ' + prettyType(_.get(diff.update.to, change.path)));
     }
     console.log();
+  } else {
+    console.log(chalk.green('Nothing to do.'));
   }
+}
+
+function ref(name: string, attribute: string) {
+  return (event: any) => {
+    let find = _.find(event.context, { name }) as any;
+    return find.resource.attributes[attribute];
+  };
 }
 
 (async() => {

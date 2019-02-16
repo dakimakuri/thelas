@@ -125,6 +125,9 @@ export namespace Product {
       })).products;
     }
     let product = _.find(productCache, { id: attributes.id }) as any;
+    if (!product) {
+      return null;
+    }
     data.title = product.title;
     data.body_html = product.body_html;
     data.options = [];
@@ -153,6 +156,11 @@ export namespace Product {
     data = _.clone(data);
     if (attributes) {
       data.id = attributes.id;
+      for (let i = 0; i < data.images.length; ++i) {
+        if (attributes.images) {
+          data.images[i].id = attributes.images[i];
+        }
+      }
       for (let i = 0; i < data.options.length; ++i) {
         data.options[i].id = attributes.options[i];
       }
@@ -164,8 +172,12 @@ export namespace Product {
   }
 
   function attributes(product: any) {
+    let images: number[] = [];
     let options: number[] = [];
     let variants: number[] = [];
+    for (let image of product.images) {
+      images.push(image.id);
+    }
     for (let option of product.options) {
       options.push(option.id);
     }
@@ -176,6 +188,83 @@ export namespace Product {
       id: product.id,
       options,
       variants
+    };
+  }
+}
+
+export namespace ProductImage {
+  export const args = {
+    product_id: {
+      type: 'number',
+      required: true
+    },
+    attachment: {
+      type: 'string',
+      required: true
+    }
+  };
+
+  export async function create(event: any) {
+    let data = translate(event.data, event.attributes);
+    let image = JSON.parse(await request.post(`https://${site}.myshopify.com/admin/products/${event.data.product_id}/images.json`, {
+      auth: shopifyAuth,
+      headers: {
+        'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: data
+      })
+    })).image;
+    return attributes(image);
+  }
+
+  export async function update(event: any) {
+    let data = translate(event.to, event.attributes);
+    let image = JSON.parse(await request.put(`https://${site}.myshopify.com/admin/products/${event.to.product_id}/images/${event.attributes.id}.json`, {
+      auth: shopifyAuth,
+      headers: {
+          'content-type': 'application/json',
+      },
+      body: JSON.stringify({
+        image: data
+      })
+    })).image;
+    return attributes(image);
+  }
+
+  export async function destroy(event: any) {
+    JSON.parse(await request.delete(`https://${site}.myshopify.com/admin/products/${event.oldData.product_id}/images/${event.attributes.id}.json`, {
+      auth: shopifyAuth
+    }));
+  }
+
+  export async function sync(data: any, attributes: any) {
+    if (!productCache) {
+      productCache = JSON.parse(await request.get(`https://${site}.myshopify.com/admin/products.json?limit=250`, {
+        auth: shopifyAuth
+      })).products;
+    }
+    let product = _.find(productCache, { id: data.product_id }) as any;
+    if (!product) {
+      return null;
+    }
+    if (!_.find(product.images, { id: attributes.id })) {
+      return null;
+    }
+    return data;
+  }
+
+  function translate(data: any, attributes: any) {
+    data = _.clone(data);
+    if (attributes) {
+      data.id = attributes.id;
+    }
+    return data;
+  }
+
+  function attributes(image: any) {
+    return {
+      id: image.id
     };
   }
 }

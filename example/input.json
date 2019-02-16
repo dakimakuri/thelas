@@ -1,6 +1,9 @@
 {
+  "Null.test": {
+    "text": "hello"
+  },
   "File.test-file": {
     "filename": "test.txt",
-    "contents": "hello world!"
+    "contents": { "$ref": "Null.test:stuff.0" }
   }
 }
