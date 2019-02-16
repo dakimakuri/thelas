@@ -16,7 +16,7 @@ We do not currently use this project. It is not intended for production use.
 
 * ~~Create, destroy, update, and synchronize with remote state.~~
 * ~~Manage Shopify products.~~
-* Manage Shopify product images.
+* ~~Manage Shopify product images.~~
 * Implement plugins, similar to Terraform's plugin system.
 * Implement provider configuration (no longer hardcode Shopify api keys).
 * Create a nice CLI tool and binary.
