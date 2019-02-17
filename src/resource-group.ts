@@ -4,6 +4,7 @@ import { Null } from './null';
 import { FS } from './fs';
 import { Resource } from './resource';
 import * as _ from 'lodash';
+import * as EventEmitter from 'events';
 const chalk = require('chalk');
 
 function iterateObject(obj: any, cb: any, path: string[] = []) {
@@ -20,14 +21,19 @@ function iterateObject(obj: any, cb: any, path: string[] = []) {
   return obj;
 }
 
-export class ResourceGroup {
+export class ResourceGroup extends EventEmitter {
   public state: any = {};
   private plugins = new Map<string, Plugin>();
 
   constructor() {
+    super();
     this.plugins.set('shopify', new Shopify());
     this.plugins.set('null', new Null());
     this.plugins.set('fs', new FS());
+  }
+
+  addPlugin(plugin: Plugin) {
+    this.plugins.set(plugin.name, plugin);
   }
 
   async diff(input: any) {
@@ -164,12 +170,12 @@ export class ResourceGroup {
     for (let update of updates) {
       if (update.diff.different) {
         if (update.diff.create || update.diff.update) {
-          let obj = update;
+          let obj = _.clone(update);
           obj.diff = _.omit(obj.diff, ['destroy']);
           creates.push(obj);
         }
         if (update.diff.destroy) {
-          let obj = update;
+          let obj = _.clone(update);
           obj.diff = _.omit(obj.diff, ['create', 'update']);
           obj.destroyOrder = this.state._order.indexOf(update.name);
           destroys.push(obj);
@@ -179,22 +185,24 @@ export class ResourceGroup {
     creates = _.orderBy(creates, 'order');
     destroys = _.reverse(_.orderBy(destroys, 'destroyOrder'));
     for (let destroy of destroys) {
-      console.log(`Destroying ${destroy.name}...`);
+      this.emit('destroy', destroy.name);
       await destroy.resource.apply(destroy.diff);
       this.state._order = _.pull(this.state._order, destroy.name);
       delete this.state[destroy.name];
       delete this.state._original[destroy.name];
+      this.emit('done', destroy.name);
     }
     for (let create of creates) {
       if (create.diff.update) {
-        console.log(`Updating ${create.name}...`);
+        this.emit('update', create.name);
       } else {
-        console.log(`Creating ${create.name}...`);
+        this.emit('create', create.name);
       }
       await create.resource.apply(create.diff);
       this.state._order = _.uniq(_.concat(this.state._order, create.name));
       this.state[create.name] = create.resource.state;
       this.state._original[create.name] = create.originalData;
+      this.emit('done', create.name);
     }
   }
 }

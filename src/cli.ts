@@ -72,9 +72,11 @@ function ref(name: string, attribute: string) {
 
 (async() => {
   try {
-
     let input = await fs.readJson('input.json');
     let group = new ResourceGroup();
+    group.on('create', (name: string) => console.log(`Creating ${name}...`));
+    group.on('update', (name: string) => console.log(`Updating ${name}...`));
+    group.on('destroy', (name: string) => console.log(`Destroying ${name}...`));
     try {
       group.state = await fs.readJson('state.json');
     } catch (err) {
