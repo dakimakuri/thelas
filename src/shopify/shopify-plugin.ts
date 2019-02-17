@@ -3,7 +3,6 @@ import { Plugin } from '../plugin';
 import { Product } from './product';
 import { ProductImage } from './product-image';
 import { ProductListing } from './product-listing';
-import { shopifyAuth, site } from './auth';
 
 export class Shopify extends Plugin {
   constructor() {
@@ -14,12 +13,16 @@ export class Shopify extends Plugin {
   }
 }
 
-let productCache: any = null;
-export async function getProducts(): Promise<any> {
-  if (!productCache) {
-    productCache = JSON.parse(await request.get(`https://${site}.myshopify.com/admin/products.json?limit=250`, {
-      auth: shopifyAuth
+let productCache: any = {};
+export async function getProducts(shopify: any): Promise<any> {
+  if (!productCache[shopify.shop]) {
+    productCache[shopify.shop] = JSON.parse(await request.get(`https://${shopify.shop}.myshopify.com/admin/products.json?limit=250`, {
+      auth: {
+        user: shopify.api_key,
+        pass: shopify.password,
+        sendImmediately: false
+      }
     })).products;
   }
-  return productCache;
+  return productCache[shopify.shop];
 }

@@ -1,14 +1,14 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource } from '../resource';
-import { key } from './auth';
+import { DShipChinaProvider } from './dshipchina.provider';
 
-let productCache: any = null;
-export async function getProducts(): Promise<any> {
-  if (!productCache) {
-    productCache = JSON.parse(await request.get('https://www.dshipchina.com/api1/getallproducts.php?key=' + encodeURIComponent(key))).products;
+let productCache: any = {};
+export async function getProducts(key: string): Promise<any> {
+  if (!productCache[key]) {
+    productCache[key] = JSON.parse(await request.get('https://www.dshipchina.com/api1/getallproducts.php?key=' + encodeURIComponent(key))).products;
   }
-  return productCache;
+  return productCache[key];
 }
 
 export class Product extends Resource {
@@ -32,6 +32,10 @@ export class Product extends Resource {
           type: 'string',
           allowNull: true
         }
+      }
+    }, {
+      providers: {
+        dshipchina: DShipChinaProvider
       }
     });
   }
@@ -59,40 +63,38 @@ export class Product extends Resource {
   }
 
   async sync(data: any, attributes: any) {
-    try {
-      let products = await getProducts();
-      //let product = (await req('getaproduct', data, attributes)).product;
-      let product = _.find(products, { product_id: attributes.product_id }) as any;
-      if (!product) return null;
-      if (product.product_name !== '0' || !!data.product_name) {
-        data.product_name = product.product_name;
-      } else {
-        data.product_name = '';
-      }
-      if (product.note !== '0' || !!data.note) {
-        data.note = product.note;
-      } else {
-        data.note = '';
-      }
-      if (product.declare_value !== '0.00' || (!!data.declared_value && data.declared_value !== '0.00')) {
-        data.declared_value = product.declare_value;
-      } else {
-        data.declared_value = '';
-      }
-      if (product.declare_name !== '0' || !!data.declared_name) {
-        data.declared_name = product.declare_name;
-      } else {
-        data.declared_name = '';
-      }
-      return data;
-    } catch (err) {
-      return null;
+    let dshipchina = this.providers['dshipchina'];
+    let products = await getProducts(dshipchina.key);
+    //let product = (await req('getaproduct', data, attributes)).product;
+    let product = _.find(products, { product_id: attributes.product_id }) as any;
+    if (!product) return null;
+    if (product.product_name !== '0' || !!data.product_name) {
+      data.product_name = product.product_name;
+    } else {
+      data.product_name = '';
     }
+    if (product.note !== '0' || !!data.note) {
+      data.note = product.note;
+    } else {
+      data.note = '';
+    }
+    if (product.declare_value !== '0.00' || (!!data.declared_value && data.declared_value !== '0.00')) {
+      data.declared_value = product.declare_value;
+    } else {
+      data.declared_value = '';
+    }
+    if (product.declare_name !== '0' || !!data.declared_name) {
+      data.declared_name = product.declare_name;
+    } else {
+      data.declared_name = '';
+    }
+    return data;
   }
 
   private async req(route: string, data: any, attributes: any): Promise<any> {
+    let dshipchina = this.providers['dshipchina'];
     let url = `https://www.dshipchina.com/api1/${route}.php`;
-    url += '?key=' + encodeURIComponent(key);
+    url += '?key=' + encodeURIComponent(dshipchina.key);
     if (route === 'editproduct' || route === 'getaproduct') {
       url += '&product_id=' + encodeURIComponent(attributes.product_id);
     }

@@ -2,7 +2,7 @@ import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource } from '../resource';
 import { getProducts } from './shopify-plugin';
-import { shopifyAuth, site } from './auth';
+import { ShopifyProvider } from './shopify.provider';
 
 export class Product extends Resource {
   constructor(name: string) {
@@ -80,13 +80,22 @@ export class Product extends Resource {
           ]
         }
       }
+    }, {
+      providers: {
+        shopify: ShopifyProvider
+      }
     });
   }
 
   async create(event: any) {
+    let shopify = this.providers['shopify'];
     let data = this.translate(event.data, event.attributes);
-    let product = JSON.parse(await request.post(`https://${site}.myshopify.com/admin/products.json`, {
-      auth: shopifyAuth,
+    let product = JSON.parse(await request.post(`https://${shopify.shop}.myshopify.com/admin/products.json`, {
+      auth: {
+        user: shopify.api_key,
+        pass: shopify.password,
+        sendImmediately: false
+      },
       headers: {
         'content-type': 'application/json',
       },
@@ -98,9 +107,14 @@ export class Product extends Resource {
   }
 
   async update(event: any) {
+    let shopify = this.providers['shopify'];
     let data = this.translate(event.to, event.attributes);
-    let product = JSON.parse(await request.put(`https://${site}.myshopify.com/admin/products/${event.attributes.id}.json`, {
-      auth: shopifyAuth,
+    let product = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/products/${event.attributes.id}.json`, {
+      auth: {
+        user: shopify.api_key,
+        pass: shopify.password,
+        sendImmediately: false
+      },
       headers: {
           'content-type': 'application/json',
       },
@@ -112,13 +126,19 @@ export class Product extends Resource {
   }
 
   async destroy(event: any) {
-    JSON.parse(await request.delete(`https://${site}.myshopify.com/admin/products/${event.attributes.id}.json`, {
-      auth: shopifyAuth
+    let shopify = this.providers['shopify'];
+    JSON.parse(await request.delete(`https://${shopify.shop}.myshopify.com/admin/products/${event.attributes.id}.json`, {
+      auth: {
+        user: shopify.api_key,
+        pass: shopify.password,
+        sendImmediately: false
+      }
     }));
   }
 
   async sync(data: any, attributes: any) {
-    let products = await getProducts();
+    let shopify = this.providers['shopify'];
+    let products = await getProducts(shopify);
     let product = _.find(products, { id: attributes.id }) as any;
     if (!product) {
       return null;

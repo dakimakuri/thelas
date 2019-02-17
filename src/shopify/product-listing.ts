@@ -1,7 +1,7 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource } from '../resource';
-import { shopifyAuth, site } from './auth';
+import { ShopifyProvider } from './shopify.provider';
 
 export class ProductListing extends Resource {
   constructor(name: string) {
@@ -14,12 +14,21 @@ export class ProductListing extends Resource {
           fragile: true
         }
       }
+    }, {
+      providers: {
+        shopify: ShopifyProvider
+      }
     });
   }
 
   async create(event: any) {
-    let product_listing = JSON.parse(await request.put(`https://${site}.myshopify.com/admin/product_listings/${event.data.product_id}.json`, {
-      auth: shopifyAuth,
+    let shopify = this.providers['shopify'];
+    let product_listing = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/product_listings/${event.data.product_id}.json`, {
+      auth: {
+        user: shopify.api_key,
+        pass: shopify.password,
+        sendImmediately: false
+      },
       headers: {
         'content-type': 'application/json',
       },
@@ -35,15 +44,25 @@ export class ProductListing extends Resource {
   }
 
   async destroy(event: any) {
-    await request.delete(`https://${site}.myshopify.com/admin/product_listings/${event.oldData.product_id}.json`, {
-      auth: shopifyAuth
+    let shopify = this.providers['shopify'];
+    await request.delete(`https://${shopify.shop}.myshopify.com/admin/product_listings/${event.oldData.product_id}.json`, {
+      auth: {
+        user: shopify.api_key,
+        pass: shopify.password,
+        sendImmediately: false
+      }
     });
   }
 
   async sync(data: any, attributes: any) {
+    let shopify = this.providers['shopify'];
     try {
-      await request.get(`https://${site}.myshopify.com/admin/product_listings/${data.product_id}.json`, {
-        auth: shopifyAuth
+      await request.get(`https://${shopify.shop}.myshopify.com/admin/product_listings/${data.product_id}.json`, {
+        auth: {
+          user: shopify.api_key,
+          pass: shopify.password,
+          sendImmediately: false
+        }
       });
       return data;
     } catch (err) {

@@ -4,7 +4,12 @@ import * as _ from 'lodash';
 const safeMode = false;
 
 export abstract class Resource {
-  constructor(public name: string, public args: Args) {
+  public providers: any = {};
+
+  constructor(public name: string, public args: Args, public options: any = {}) {
+    if (!options.providers) {
+      options.providers = {};
+    }
   }
 
   async apply(diff: any, attributes: any) {

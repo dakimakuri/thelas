@@ -5,6 +5,7 @@ import { Null } from './null';
 import { FS } from './fs';
 import { DShipChina } from './dshipchina';
 import { Resource } from './resource';
+import { validate } from 'jsonschema';
 import * as _ from 'lodash';
 import * as EventEmitter from 'events';
 const chalk = require('chalk');
@@ -40,6 +41,7 @@ export class ResourceGroup extends EventEmitter {
   }
 
   async diff(input: any) {
+    input = _.cloneDeep(input);
     let originalInput = _.cloneDeep(input);
     let syncData: any = {};
     let resources: any = {};
@@ -53,6 +55,21 @@ export class ResourceGroup extends EventEmitter {
       }
       if (input[key] == undefined) {
         input[key] = null;
+      }
+    }
+    let providers: any = {};
+    for (let name in input) {
+      let spl = name.split('.');
+      if (spl[0] === 'provider') {
+        if (spl.length == 2) {
+          spl.push('default');
+        }
+        if (spl.length != 3) {
+          throw new Error('Bad provider format: ' + name);
+        }
+        providers[spl[1]] = providers[spl[1]] || {};
+        providers[spl[1]][spl[2]] = input[name];
+        delete input[name];
       }
     }
     for (let name in input) {
@@ -69,6 +86,27 @@ export class ResourceGroup extends EventEmitter {
         throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
       }
       let resource = new resourceType(name);
+      for (let key in resource.options.providers) {
+        let profile = 'default';
+        if (input[name]) {
+          if (input[name][key]) {
+            profile = input[name][key];
+            delete input[name][key];
+          }
+        } else if (this.state._original[name]) {
+          if (this.state._original[name][key]) {
+            profile = this.state._original[name][key];
+          }
+        } else {
+          throw new Error('Resource (' + name + ') missing provider information.');
+        }
+        let provider = resource.options.providers[key]();
+        if (!providers[provider.name] || !providers[provider.name][profile]) {
+          throw new Error('Resource (' + name + ') missing a provider: ' + key);
+        }
+        validate(providers[provider.name][profile], provider.schema, { throwError: true });
+        resource.providers[key] = providers[provider.name][profile];
+      }
       resources[name] = resource;
       syncData[name] = null;
       if (this.state[name] && this.state[name].data) {
