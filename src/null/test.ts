@@ -1,13 +1,3 @@
-import * as _ from 'lodash';
-import { Plugin } from './plugin';
-
-export class Null extends Plugin {
-  constructor() {
-    super('null');
-    this.addResource('test', Test);
-  }
-}
-
 export namespace Test {
   export const args = {
     text: {

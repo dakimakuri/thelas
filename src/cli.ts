@@ -3,7 +3,6 @@ import * as _ from 'lodash';
 import * as readline from 'readline';
 import { ResourceGroup } from './resource-group';
 import { Resource } from './resource';
-import { Null } from './null';
 import { Args } from './args';
 const chalk = require('chalk');
 const makeError = require('make-error');

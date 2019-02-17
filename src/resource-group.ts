@@ -1,7 +1,7 @@
 import { Plugin } from './plugin';
 import { Shopify } from './shopify';
 import { Null } from './null';
-import { FS } from './file';
+import { FS } from './fs';
 import { Resource } from './resource';
 import * as _ from 'lodash';
 const chalk = require('chalk');

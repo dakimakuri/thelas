@@ -1,14 +1,6 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as _ from 'lodash';
-import { Plugin } from './plugin';
-
-export class FS extends Plugin {
-  constructor() {
-    super('fs');
-    this.addResource('file', File);
-  }
-}
 
 export namespace File {
   export const args = {
@@ -52,7 +44,7 @@ export namespace File {
   async function attributes(data: any) {
     let stat = await fs.stat(data.filename);
     return {
-      filename: path.isAbsolute(data.filename) ? data.filename : path.join(process.cwd(), data.filename),
+      filename: data.filename,
       contents: data.contents,
       atime: stat.atime,
       mtime: stat.mtime,
