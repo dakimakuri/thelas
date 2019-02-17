@@ -10,7 +10,9 @@ I was inspired to approach this problem similar to how [Terraform](https://www.t
 
 ## Project Status
 
-We do not currently use this project. It is not intended for production use.
+Works for the most part. Shopify products and images can be created and updated using this tool. DShipChina products can be created and then referenced within the Shopify product. Multiple Shopify accounts can be manipulated at once. We have successfully audited our entire catalogue of products, minus the accessories, using this tool. It meets the goals it was originally set out to accomplish.
+
+Some work needs to be done to make the code more stable and useable, such as tests, documentation, and more plugins.
 
 ## Todo
 
