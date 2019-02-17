@@ -95,7 +95,7 @@ function ref(name: string, attribute: string) {
         prettyDiff(update.diff, update.resource.name);
         different = true;
       } else {
-        group.state[update.name] = update.resource.state;
+        group.state[update.name].data = update.sync;
       }
     }
     try {

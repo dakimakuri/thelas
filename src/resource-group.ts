@@ -1,3 +1,4 @@
+import { Args } from './args';
 import { Plugin } from './plugin';
 import { Shopify } from './shopify';
 import { Null } from './null';
@@ -40,6 +41,7 @@ export class ResourceGroup extends EventEmitter {
 
   async diff(input: any) {
     let originalInput = _.cloneDeep(input);
+    let syncData: any = {};
     let resources: any = {};
     let diffs: any = {};
     let depends: any = {};
@@ -66,12 +68,12 @@ export class ResourceGroup extends EventEmitter {
       if (!resourceType) {
         throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
       }
-      let resource = new Resource(resourceType, name);
+      let resource = new resourceType(name);
       resources[name] = resource;
-      if (this.state[name]) {
-        resource.state = this.state[name];
+      syncData[name] = null;
+      if (this.state[name] && this.state[name].data) {
+        syncData[name] = await resource.sync(_.cloneDeep(this.state[name].data), _.cloneDeep(this.state[name].attributes));
       }
-      await resource.sync();
       depends[name] = [];
       if (input[name] != null) {
         iterateObject(input[name], (obj: any, path: string) => {
@@ -116,26 +118,32 @@ export class ResourceGroup extends EventEmitter {
       }
     }
     for (let name of createOrder) {
-      let resource = resources[name];
       if (input[name] != null) {
         input[name] = iterateObject(input[name], (obj: any, path: string) => {
           if (obj['$ref']) {
             let targetName = obj['$ref'].substr(0, obj['$ref'].lastIndexOf(':'));
             let targetAttr = obj['$ref'].substr(obj['$ref'].lastIndexOf(':') + 1);
-            let targetResource = resources[targetName];
-            if (resource.data === null || targetResource.data === null) {
-              return () => _.get(targetResource.attributes, targetAttr);
+            let fetch = () => _.get(this.state[targetName].attributes, targetAttr);
+            if (syncData[name] === null || this.state[targetName].data === null) {
+              return fetch;
             } else if (!this.state._original || !this.state._original[name]) {
-              return () => _.get(targetResource.attributes, targetAttr);
+              return fetch;
             } else {
               if (!_.isEqual(_.get(this.state._original[name], path), obj)) {
-                return () => _.get(targetResource.attributes, targetAttr);
+                return fetch;
               }
-              let changedAttrs = resource.invalidatedAttributes(diffs[targetName]);
+              let changedAttrs: string[] = [];
+              for (let change of diffs[targetName].changes) {
+                changedAttrs = _.concat(changedAttrs, change.schema.attributes);
+                if (change.schema.fragile) {
+                  return null;
+                }
+              }
+              changedAttrs = _.uniq(changedAttrs);
               if (!changedAttrs || changedAttrs.indexOf(targetAttr) != -1) {
-                return () => _.get(targetResource.attributes, targetAttr);
+                return fetch;
               } else {
-                return _.get(resource.data, path);
+                return _.get(syncData[name], path);
               }
             }
           }
@@ -145,17 +153,17 @@ export class ResourceGroup extends EventEmitter {
           delete input[name]['depends'];
         }
       }
+      let resource = resources[name];
+      diffs[name] = Args.diff(resource.args, syncData[name], input[name], false);
       updates.push({
         resource,
         data: input[name],
         originalData: originalInput[name],
         name,
-        order: createOrder.indexOf(name)
+        order: createOrder.indexOf(name),
+        diff: diffs[name],
+        sync: syncData[name]
       });
-      diffs[name] = resource.diff(input[name]);
-    }
-    for (let update of updates) {
-      update.diff = update.resource.diff(update.data);
     }
     return updates;
   }
@@ -188,7 +196,7 @@ export class ResourceGroup extends EventEmitter {
     destroys = _.reverse(_.orderBy(destroys, 'destroyOrder'));
     for (let destroy of destroys) {
       this.emit('destroy', destroy.name);
-      await destroy.resource.apply(destroy.diff);
+      await destroy.resource.apply(destroy.diff, this.state[destroy.name] ? this.state[destroy.name].attributes : null);
       this.state._order = _.pull(this.state._order, destroy.name);
       delete this.state[destroy.name];
       delete this.state._original[destroy.name];
@@ -200,9 +208,9 @@ export class ResourceGroup extends EventEmitter {
       } else {
         this.emit('create', create.name);
       }
-      await create.resource.apply(create.diff);
+      let resourceState = await create.resource.apply(create.diff, this.state[create.name] ? this.state[create.name].attributes : null);
       this.state._order = _.uniq(_.concat(this.state._order, create.name));
-      this.state[create.name] = create.resource.state;
+      this.state[create.name] = resourceState;
       this.state._original[create.name] = create.originalData;
       this.emit('done', create.name);
     }

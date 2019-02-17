@@ -1,6 +1,6 @@
 import * as fs from 'fs-extra';
 import * as _ from 'lodash';
-import { Plugin, ResourceGroup } from '../src';
+import { Plugin, ResourceGroup, Resource } from '../src';
 
 let active: MockPlugin = null;
 
@@ -16,16 +16,21 @@ export class MockPlugin extends Plugin {
   }
 }
 
-export namespace MockResource {
-  export const args = {
-    name: {
-      type: 'string',
-      required: true,
-      fragile: true
-    }
-  };
+export class MockResource extends Resource {
+  constructor(name: string) {
+    super(name, {
+      type: 'object',
+      properties: {
+        name: {
+          type: 'string',
+          required: true,
+          fragile: true
+        }
+      }
+    });
+  }
 
-  export async function create(event: any) {
+  async create(event: any) {
     active.data.resources[event.data.name] = {
       name: event.data.name
     };
@@ -35,18 +40,18 @@ export namespace MockResource {
     };
   }
 
-  export async function update(event: any) {
+  async update(event: any) {
     return {
       text: event.data,
       stuff: [ 1, 2, 3 ]
     };
   }
 
-  export async function destroy(event: any) {
+  async destroy(event: any) {
     delete active.data.resources[event.oldData.name];
   }
 
-  export async function sync(data: any) {
+  async sync(data: any) {
     return data;
   }
 }

@@ -1,17 +1,23 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
+import { Resource } from '../resource';
 import { shopifyAuth, site } from './auth';
 
-export namespace ProductListing {
-  export const args = {
-    product_id: {
-      type: 'number',
-      required: true,
-      fragile: true
-    }
-  };
+export class ProductListing extends Resource {
+  constructor(name: string) {
+    super(name, {
+      type: 'object',
+      properties: {
+        product_id: {
+          type: 'number',
+          required: true,
+          fragile: true
+        }
+      }
+    });
+  }
 
-  export async function create(event: any) {
+  async create(event: any) {
     let product_listing = JSON.parse(await request.put(`https://${site}.myshopify.com/admin/product_listings/${event.data.product_id}.json`, {
       auth: shopifyAuth,
       headers: {
@@ -21,20 +27,20 @@ export namespace ProductListing {
         product_listing: event.data
       })
     })).product_listing;
-    return attributes(product_listing);
+    return this.attributes(product_listing);
   }
 
-  export async function update(event: any) {
+  async update(event: any) {
     throw new Error('Cannot update product listing.');
   }
 
-  export async function destroy(event: any) {
+  async destroy(event: any) {
     await request.delete(`https://${site}.myshopify.com/admin/product_listings/${event.oldData.product_id}.json`, {
       auth: shopifyAuth
     });
   }
 
-  export async function sync(data: any, attributes: any) {
+  async sync(data: any, attributes: any) {
     try {
       await request.get(`https://${site}.myshopify.com/admin/product_listings/${data.product_id}.json`, {
         auth: shopifyAuth
@@ -45,7 +51,7 @@ export namespace ProductListing {
     }
   }
 
-  function attributes(product_listing: any) {
+  private attributes(product_listing: any) {
     return {
       product_id: product_listing.product_id
     };

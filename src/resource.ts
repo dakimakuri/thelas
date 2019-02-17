@@ -3,76 +3,46 @@ import * as _ from 'lodash';
 
 const safeMode = false;
 
-export class Resource {
-  private data = null;
-  private attributes = null;
-
-  constructor(private provider: any, public name: string) {
+export abstract class Resource {
+  constructor(public name: string, public args: Args) {
   }
 
-  get state() {
-    return {
-      data: this.data,
-      attributes: this.attributes
-    };
-  }
-
-  set state(value: any) {
-    this.data = value.data;
-    this.attributes = value.attributes;
-  }
-
-  async sync() {
-    if (this.data) {
-      this.data = await this.provider.sync(this.data, this.attributes);
-    }
-  }
-
-  diff(updated: any, taint = false) {
-    return Args.diff({ type: 'object', properties: this.provider.args }, this.data, updated, taint);
-  }
-
-  async apply(diff: any) {
+  async apply(diff: any, attributes: any) {
     if (safeMode) {
       throw new Error('Apply cancelled - in safe mode.');
     }
+    let data: any = null;
     if (diff.destroy) {
-      await this.provider.destroy({
+      await this.destroy({
         oldData: diff.destroy,
         changes: diff.changes,
-        attributes: this.attributes
+        attributes: attributes
       });
-      this.attributes = null;
-      this.data = null;
+      attributes = null;
+      data = null;
     }
     if (diff.create) {
-      this.attributes = await this.provider.create({
+      attributes = await this.create({
         data: Args.applyCalculations(diff.create),
         changes: diff.changes,
-        attributes: this.attributes
+        attributes: attributes
       });
-      this.data = diff.create;
+      data = diff.create;
     }
     if (diff.update) {
-      this.attributes = await this.provider.update({
+      attributes = await this.update({
         from: diff.update.from,
         to: Args.applyCalculations(diff.update.to),
         changes: diff.changes,
-        attributes: this.attributes
+        attributes: attributes
       });
-      this.data = diff.update.to;
+      data = diff.update.to;
     }
-    return this.attributes;
+    return { data, attributes };
   }
 
-  invalidatedAttributes(diff: any) {
-    let attrs: string[] = [];
-    for (let change of diff.changes) {
-      attrs = _.concat(attrs, change.schema.attributes);
-      if (change.schema.fragile) {
-        return null;
-      }
-    }
-    return _.uniq(attrs);
-  }
+  abstract create(event: any): any;
+  abstract update(event: any): any;
+  abstract destroy(event: any): void;
+  abstract sync(data: any, attributes: any): any;
 }

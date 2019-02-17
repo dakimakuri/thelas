@@ -1,13 +1,20 @@
-export namespace Test {
-  export const args = {
-    text: {
-      type: 'string',
-      required: true,
-      attributes: [ 'text' ]
-    }
-  };
+import { Resource } from '../resource';
 
-  export async function create(event: any) {
+export class Test extends Resource {
+  constructor(name: string) {
+    super(name, {
+      type: 'object',
+      properties: {
+        text: {
+          type: 'string',
+          required: true,
+          attributes: [ 'text' ]
+        }
+      }
+    });
+  }
+
+  async create(event: any) {
     console.log('Create:', event.data.text);
     console.log();
     return {
@@ -16,7 +23,7 @@ export namespace Test {
     };
   }
 
-  export async function update(event: any) {
+  async update(event: any) {
     console.log('Update:', event.to.text);
     console.log();
     return {
@@ -25,12 +32,12 @@ export namespace Test {
     };
   }
 
-  export async function destroy(event: any) {
+  async destroy(event: any) {
     console.log('Destroy:', event.oldData.text);
     console.log();
   }
 
-  export async function sync(data: any) {
+  async sync(data: any) {
     return data;
   }
 }

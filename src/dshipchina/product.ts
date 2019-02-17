@@ -1,5 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
+import { Resource } from '../resource';
 import { key } from './auth';
 
 let productCache: any = null;
@@ -10,31 +11,36 @@ export async function getProducts(): Promise<any> {
   return productCache;
 }
 
-export namespace Product {
-  export const args = {
-    product_name: {
-      type: 'string',
-      allowNull: true
-    },
-    note: {
-      type: 'string',
-      allowNull: true
-    },
-    declared_name: {
-      type: 'string',
-      allowNull: true
-    },
-    declared_value: {
-      type: 'string',
-      allowNull: true
-    },
-  };
-
-  export async function create(event: any) {
-    return attributes((await req('createproduct', event.data, event.attributes)));
+export class Product extends Resource {
+  constructor(name: string) {
+    super(name, {
+      type: 'object',
+      properties: {
+        product_name: {
+          type: 'string',
+          allowNull: true
+        },
+        note: {
+          type: 'string',
+          allowNull: true
+        },
+        declared_name: {
+          type: 'string',
+          allowNull: true
+        },
+        declared_value: {
+          type: 'string',
+          allowNull: true
+        }
+      }
+    });
   }
 
-  export async function update(event: any) {
+  async create(event: any) {
+    return this.attributes((await this.req('createproduct', event.data, event.attributes)));
+  }
+
+  async update(event: any) {
     if (event.from.note && !event.to.note) {
       event.to.note = '';
     }
@@ -44,15 +50,15 @@ export namespace Product {
     if (event.from.declared_name && !event.to.declared_name) {
       event.to.declared_name = '';
     }
-    await req('editproduct', event.to, event.attributes);
+    await this.req('editproduct', event.to, event.attributes);
     return event.attributes;
   }
 
-  export async function destroy(event: any) {
+  async destroy(event: any) {
     throw new Error('Cannot destroy DShipChina products. You must do this manually.');
   }
 
-  export async function sync(data: any, attributes: any) {
+  async sync(data: any, attributes: any) {
     try {
       let products = await getProducts();
       //let product = (await req('getaproduct', data, attributes)).product;
@@ -84,7 +90,7 @@ export namespace Product {
     }
   }
 
-  async function req(route: string, data: any, attributes: any): Promise<any> {
+  private async req(route: string, data: any, attributes: any): Promise<any> {
     let url = `https://www.dshipchina.com/api1/${route}.php`;
     url += '?key=' + encodeURIComponent(key);
     if (route === 'editproduct' || route === 'getaproduct') {
@@ -109,7 +115,7 @@ export namespace Product {
     return result;
   }
 
-  function attributes(product: any) {
+  private attributes(product: any) {
     return {
       product_id: product.product_id
     };

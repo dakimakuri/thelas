@@ -1,84 +1,90 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
+import { Resource } from '../resource';
 import { getProducts } from './shopify-plugin';
 import { shopifyAuth, site } from './auth';
 
-export namespace Product {
-  export const args = {
-    title: {
-      type: 'string',
-      required: true
-    },
-    body_html: {
-      type: 'string',
-      default: ''
-    },
-    options: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          name: {
-            type: 'string',
-            required: true
-          }
+export class Product extends Resource {
+  constructor(name: string) {
+    super(name, {
+      type: 'object',
+      properties: {
+        title: {
+          type: 'string',
+          required: true
+        },
+        body_html: {
+          type: 'string',
+          default: ''
+        },
+        options: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              name: {
+                type: 'string',
+                required: true
+              }
+            }
+          },
+          default: [
+            {
+              name: 'Title'
+            }
+          ]
+        },
+        variants: {
+          type: 'array',
+          items: {
+            type: 'object',
+            properties: {
+              option1: {
+                type: 'string',
+                required: true
+              },
+              grams: {
+                type: 'number',
+                default: 0
+              },
+              sku: {
+                type: 'string',
+                default: ''
+              },
+              taxable: {
+                type: 'boolean',
+                default: true
+              },
+              price: {
+                type: 'number',
+                default: 0
+              },
+              requires_shipping: {
+                type: 'boolean',
+                default: true
+              },
+              inventory_management: {
+                type: 'string',
+                allowNull: true
+              },
+              inventory_policy: {
+                type: 'string',
+                default: 'deny'
+              }
+            }
+          },
+          default: [
+            {
+              option1: 'Default Title'
+            }
+          ]
         }
-      },
-      default: [
-        {
-          name: 'Title'
-        }
-      ]
-    },
-    variants: {
-      type: 'array',
-      items: {
-        type: 'object',
-        properties: {
-          option1: {
-            type: 'string',
-            required: true
-          },
-          grams: {
-            type: 'number',
-            default: 0
-          },
-          sku: {
-            type: 'string',
-            default: ''
-          },
-          taxable: {
-            type: 'boolean',
-            default: true
-          },
-          price: {
-            type: 'number',
-            default: 0
-          },
-          requires_shipping: {
-            type: 'boolean',
-            default: true
-          },
-          inventory_management: {
-            type: 'string',
-            allowNull: true
-          },
-          inventory_policy: {
-            type: 'string',
-            default: 'deny'
-          }
-        }
-      },
-      default: [
-        {
-          option1: 'Default Title'
-        }
-      ]
-    }
-  };
+      }
+    });
+  }
 
-  export async function create(event: any) {
-    let data = translate(event.data, event.attributes);
+  async create(event: any) {
+    let data = this.translate(event.data, event.attributes);
     let product = JSON.parse(await request.post(`https://${site}.myshopify.com/admin/products.json`, {
       auth: shopifyAuth,
       headers: {
@@ -88,11 +94,11 @@ export namespace Product {
         product: data
       })
     })).product;
-    return attributes(product);
+    return this.attributes(product);
   }
 
-  export async function update(event: any) {
-    let data = translate(event.to, event.attributes);
+  async update(event: any) {
+    let data = this.translate(event.to, event.attributes);
     let product = JSON.parse(await request.put(`https://${site}.myshopify.com/admin/products/${event.attributes.id}.json`, {
       auth: shopifyAuth,
       headers: {
@@ -102,16 +108,16 @@ export namespace Product {
         product: data
       })
     })).product;
-    return attributes(product);
+    return this.attributes(product);
   }
 
-  export async function destroy(event: any) {
+  async destroy(event: any) {
     JSON.parse(await request.delete(`https://${site}.myshopify.com/admin/products/${event.attributes.id}.json`, {
       auth: shopifyAuth
     }));
   }
 
-  export async function sync(data: any, attributes: any) {
+  async sync(data: any, attributes: any) {
     let products = await getProducts();
     let product = _.find(products, { id: attributes.id }) as any;
     if (!product) {
@@ -141,7 +147,7 @@ export namespace Product {
     return data;
   }
 
-  function translate(data: any, attributes: any) {
+  private translate(data: any, attributes: any) {
     data = _.clone(data);
     if (attributes) {
       data.id = attributes.id;
@@ -155,7 +161,7 @@ export namespace Product {
     return data;
   }
 
-  function attributes(product: any) {
+  private attributes(product: any) {
     let options: number[] = [];
     let variants: number[] = [];
     for (let option of product.options) {
