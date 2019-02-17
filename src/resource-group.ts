@@ -2,6 +2,7 @@ import { Plugin } from './plugin';
 import { Shopify } from './shopify';
 import { Null } from './null';
 import { FS } from './fs';
+import { DShipChina } from './dshipchina';
 import { Resource } from './resource';
 import * as _ from 'lodash';
 import * as EventEmitter from 'events';
@@ -30,6 +31,7 @@ export class ResourceGroup extends EventEmitter {
     this.plugins.set('shopify', new Shopify());
     this.plugins.set('null', new Null());
     this.plugins.set('fs', new FS());
+    this.plugins.set('dshipchina', new DShipChina());
   }
 
   addPlugin(plugin: Plugin) {

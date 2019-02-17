@@ -46,7 +46,10 @@ function prettyDiff(diff: any, name = '') {
   } else if (diff.create) {
     console.log(chalk.green('+ create') + name);
     for (let change of diff.changes) {
-      console.log('  ' + chalk.green('+ ' + change.path + ':') + ' ' + prettyType(_.get(diff.create, change.path)));
+      let value = _.get(diff.create, change.path);
+      if (value != null) {
+        console.log('  ' + chalk.green('+ ' + change.path + ':') + ' ' + prettyType(value));
+      }
     }
     console.log();
   } else if (diff.destroy) {
