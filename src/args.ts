@@ -149,10 +149,7 @@ export class Args {
     }
     Args.verify(args);
     let schema = Args.toSchema(args);
-    if (previous != null) {
-      validate(previous, schema, { throwError: true });
-      previous = Args.applyDefaults(args, previous);
-    }
+    previous = Args.applyDefaults(args, previous);
     if (updated != null) {
       validate(updated, schema, { throwError: true });
       updated = Args.applyDefaults(args, updated);
@@ -173,6 +170,10 @@ export class Args {
     let broken = false;
     for (let key of keys) {
       let schema = _.get(args, key.schema);
+      if (schema == null) {
+        _.unset(previous, key.path);
+        continue;
+      }
       changes.push({
         path: key.path,
         schema

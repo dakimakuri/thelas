@@ -94,15 +94,15 @@ function ref(name: string, attribute: string) {
         group.state[update.name] = update.resource.state;
       }
     }
-    if (different) {
-      await confirm('Apply these changes?');
-      try {
+    try {
+      if (different) {
+        await confirm('Apply these changes?');
         await group.apply(updates);
-      } finally {
-        await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+      } else {
+        console.log(chalk.green('Nothing to do.'));
       }
-    } else {
-      console.log(chalk.green('Nothing to do.'));
+    } finally {
+      await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
     }
   } catch (err) {
     if (err instanceof UserCancelledError) {
