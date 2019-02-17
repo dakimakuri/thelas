@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Module } from './module';
+import { Plugin } from './plugin';
 
 const shopifyAuth = {
   user: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
@@ -11,7 +11,7 @@ const site = 'shop';
 
 let productCache: any = null;
 
-export class Shopify extends Module {
+export class Shopify extends Plugin {
   constructor() {
     super('shopify')
     this.addResource('product', Product);

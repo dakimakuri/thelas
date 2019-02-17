@@ -1,4 +1,4 @@
-import { Module } from './module';
+import { Plugin } from './plugin';
 import { Shopify } from './shopify';
 import { Null } from './null';
 import { FS } from './file';
@@ -22,12 +22,12 @@ function iterateObject(obj: any, cb: any, path: string[] = []) {
 
 export class ResourceGroup {
   public state: any = {};
-  private modules = new Map<string, Module>();
+  private plugins = new Map<string, Plugin>();
 
   constructor() {
-    this.modules.set('shopify', new Shopify());
-    this.modules.set('null', new Null());
-    this.modules.set('fs', new FS());
+    this.plugins.set('shopify', new Shopify());
+    this.plugins.set('null', new Null());
+    this.plugins.set('fs', new FS());
   }
 
   async diff(input: any) {
@@ -50,11 +50,11 @@ export class ResourceGroup {
       if (spl.length != 3) {
         throw new Error('Bad resource format: ' + name);
       }
-      let module = this.modules.get(spl[0]);
-      if (!module) {
-        throw new Error('Invalid module: ' + spl[0]);
+      let plugin = this.plugins.get(spl[0]);
+      if (!plugin) {
+        throw new Error('Invalid plugin: ' + spl[0]);
       }
-      let resourceType = module.getResource(spl[1]);
+      let resourceType = plugin.getResource(spl[1]);
       if (!resourceType) {
         throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
       }

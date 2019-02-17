@@ -1,9 +1,9 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as _ from 'lodash';
-import { Module } from './module';
+import { Plugin } from './plugin';
 
-export class FS extends Module {
+export class FS extends Plugin {
   constructor() {
     super('fs');
     this.addResource('file', File);

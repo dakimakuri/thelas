@@ -1,7 +1,7 @@
 import * as _ from 'lodash';
-import { Module } from './module';
+import { Plugin } from './plugin';
 
-export class Null extends Module {
+export class Null extends Plugin {
   constructor() {
     super('null');
     this.addResource('test', Test);

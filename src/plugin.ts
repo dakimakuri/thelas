@@ -1,4 +1,4 @@
-export class Module {
+export class Plugin {
   private resources: any = {};
 
   constructor(public name: string) {
