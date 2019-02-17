@@ -193,6 +193,10 @@ export namespace ProductImage {
       type: 'string',
       required: true
     },
+    alt: {
+      type: 'string',
+      allowNull: true
+    },
     variant_ids: {
       type: 'array',
       default: [],
@@ -247,9 +251,11 @@ export namespace ProductImage {
     if (!product) {
       return null;
     }
-    if (!_.find(product.images, { id: attributes.id })) {
+    let image = _.find(product.images, { id: attributes.id }) as any;
+    if (!image) {
       return null;
     }
+    data.alt = image.alt;
     return data;
   }
 
