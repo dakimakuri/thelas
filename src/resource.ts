@@ -1,6 +1,8 @@
 import { Args } from './args';
 import * as _ from 'lodash';
 
+const safeMode = false;
+
 export class Resource {
   private data = null;
   private attributes = null;
@@ -31,6 +33,9 @@ export class Resource {
   }
 
   async apply(diff: any) {
+    if (safeMode) {
+      throw new Error('Apply cancelled - in safe mode.');
+    }
     if (diff.destroy) {
       await this.provider.destroy({
         oldData: diff.destroy,
