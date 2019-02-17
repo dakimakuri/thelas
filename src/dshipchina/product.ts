@@ -2,6 +2,14 @@ import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { key } from './auth';
 
+let productCache: any = null;
+export async function getProducts(): Promise<any> {
+  if (!productCache) {
+    productCache = JSON.parse(await request.get('https://www.dshipchina.com/api1/getallproducts.php?key=' + encodeURIComponent(key))).products;
+  }
+  return productCache;
+}
+
 export namespace Product {
   export const args = {
     product_name: {
@@ -46,7 +54,10 @@ export namespace Product {
 
   export async function sync(data: any, attributes: any) {
     try {
-      let product = (await req('getaproduct', data, attributes)).product;
+      let products = await getProducts();
+      //let product = (await req('getaproduct', data, attributes)).product;
+      let product = _.find(products, { product_id: attributes.product_id }) as any;
+      if (!product) return null;
       if (product.product_name !== '0' || !!data.product_name) {
         data.product_name = product.product_name;
       } else {
@@ -57,7 +68,7 @@ export namespace Product {
       } else {
         data.note = '';
       }
-      if (product.declare_value !== '0.00' || !!data.declared_value) {
+      if (product.declare_value !== '0.00' || (!!data.declared_value && data.declared_value !== '0.00')) {
         data.declared_value = product.declare_value;
       } else {
         data.declared_value = '';
