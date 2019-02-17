@@ -149,7 +149,9 @@ export class Args {
     }
     Args.verify(args);
     let schema = Args.toSchema(args);
-    previous = Args.applyDefaults(args, previous);
+    if (previous != null) {
+      previous = Args.applyDefaults(args, previous);
+    }
     if (updated != null) {
       validate(updated, schema, { throwError: true });
       updated = Args.applyDefaults(args, updated);
