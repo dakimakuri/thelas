@@ -18,7 +18,7 @@ We do not currently use this project. It is not intended for production use.
 * ~~Manage Shopify products.~~
 * ~~Manage Shopify product images.~~
 * ~~Implement plugins, similar to Terraform's plugin system.~~
-* Implement provider configuration (no longer hardcode Shopify api keys).
+* ~~Implement provider configuration (no longer hardcode Shopify api keys).~~
 * Create a nice CLI tool and binary.
 * Write tests!
 * Add some kind of backwards compatibility when resources change.
