@@ -1,6 +1,14 @@
 import * as _ from 'lodash';
+import { Module } from './module';
 
-export namespace Null {
+export class Null extends Module {
+  constructor() {
+    super('null');
+    this.addResource('test', Test);
+  }
+}
+
+export namespace Test {
   export const args = {
     text: {
       type: 'string',

@@ -1,9 +1,9 @@
 {
-  "Null.test": {
+  "null.test.test": {
     "text": "hello"
   },
-  "File.test-file": {
+  "fs.file.test-file": {
     "filename": "test.txt",
-    "contents": { "$ref": "Null.test:stuff.0" }
+    "contents": { "$ref": "null.test.test:stuff.0" }
   }
 }

@@ -1,6 +1,14 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as _ from 'lodash';
+import { Module } from './module';
+
+export class FS extends Module {
+  constructor() {
+    super('fs');
+    this.addResource('file', File);
+  }
+}
 
 export namespace File {
   export const args = {

@@ -1,6 +1,7 @@
-import { Product, ProductImage, ProductListing } from './shopify';
+import { Module } from './module';
+import { Shopify } from './shopify';
 import { Null } from './null';
-import { File } from './file';
+import { FS } from './file';
 import { Resource } from './resource';
 import * as _ from 'lodash';
 const chalk = require('chalk');
@@ -21,6 +22,13 @@ function iterateObject(obj: any, cb: any, path: string[] = []) {
 
 export class ResourceGroup {
   public state: any = {};
+  private modules = new Map<string, Module>();
+
+  constructor() {
+    this.modules.set('shopify', new Shopify());
+    this.modules.set('null', new Null());
+    this.modules.set('fs', new FS());
+  }
 
   async diff(input: any) {
     let originalInput = _.cloneDeep(input);
@@ -28,7 +36,6 @@ export class ResourceGroup {
     let diffs: any = {};
     let depends: any = {};
     let updates: any[] = [];
-    let resourceTypes = { Null: Null, File: File, Product: Product, ProductImage: ProductImage, ProductListing: ProductListing };
     let found = [];
     for (let key in this.state) {
       if (key.length > 0 && key[0] === '_') {
@@ -39,11 +46,19 @@ export class ResourceGroup {
       }
     }
     for (let name in input) {
-      let type = name.substr(0, name.indexOf('.'));
-      if (!resourceTypes[type]) {
-        throw new Error('Unknown type: ' + type);
+      let spl = name.split('.');
+      if (spl.length != 3) {
+        throw new Error('Bad resource format: ' + name);
       }
-      let resource = new Resource(resourceTypes[type], name);
+      let module = this.modules.get(spl[0]);
+      if (!module) {
+        throw new Error('Invalid module: ' + spl[0]);
+      }
+      let resourceType = module.getResource(spl[1]);
+      if (!resourceType) {
+        throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
+      }
+      let resource = new Resource(resourceType, name);
       resources[name] = resource;
       if (this.state[name]) {
         resource.state = this.state[name];

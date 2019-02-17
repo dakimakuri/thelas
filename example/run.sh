@@ -1,1 +1,1 @@
-../node_modules/.bin/ts-node ../src/index.ts
+../node_modules/.bin/ts-node ../src/cli.ts
