@@ -1,7 +1,7 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource } from '../resource';
-import { getProducts } from './shopify-plugin';
+import { getProducts } from './shopify.plugin';
 import { ShopifyProvider } from './shopify.provider';
 
 export class Product extends Resource {

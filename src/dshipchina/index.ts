@@ -1,2 +1,2 @@
-export * from './dshipchina-plugin';
+export * from './dshipchina.plugin';
 export * from './product';
