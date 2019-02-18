@@ -4,6 +4,7 @@ import { Shopify } from './shopify';
 import { Null } from './null';
 import { FS } from './fs';
 import { DShipChina } from './dshipchina';
+import { AWS } from './aws';
 import { Resource } from './resource';
 import { validate } from 'jsonschema';
 import * as _ from 'lodash';
@@ -34,6 +35,7 @@ export class ResourceGroup extends EventEmitter {
     this.plugins.set('null', new Null());
     this.plugins.set('fs', new FS());
     this.plugins.set('dshipchina', new DShipChina());
+    this.plugins.set('aws', new AWS());
   }
 
   addPlugin(plugin: Plugin) {

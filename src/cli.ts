@@ -29,6 +29,7 @@ function prettyType(obj: any) {
     if (str.length > 40) {
       str = str.substr(0, 40) + '...';
     }
+    str = str.replace(/\n/g, '\\n');
     return '"' + str + '"';
   }
 }

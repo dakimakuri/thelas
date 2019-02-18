@@ -1,0 +1,9 @@
+import { Plugin } from '../plugin';
+import { S3BucketObject } from './s3-bucket-object';
+
+export class AWS extends Plugin {
+  constructor() {
+    super('aws')
+    this.addResource('s3-bucket-object', S3BucketObject);
+  }
+}
