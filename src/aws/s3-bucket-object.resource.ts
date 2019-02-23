@@ -100,7 +100,32 @@ export class S3BucketObjectResource extends Resource {
     return data;
   }
 
-  import(id: string) {
-    throw new Error('NYI');
+  async import(id: string) {
+    const index = id.indexOf('.');
+    if (index === -1) {
+      throw new Error('Invalid id: ' + id);
+    }
+    const bucket = id.substr(0, index);
+    const key = id.substr(index + 1);
+    const aws = this.providers['aws'];
+    const s3 = new AWS.S3({
+      apiVersion,
+      accessKeyId: aws.access_key,
+      secretAccessKey: aws.secret_key,
+      region: aws.region
+    });
+    const params = {
+      Bucket: bucket,
+      Key: key,
+    };
+    let result = await s3.getObject(params).promise();
+    return {
+      data: {},
+      attributes: {
+        bucket,
+        key,
+        contents: result.Body.toString()
+      }
+    };
   }
 }
