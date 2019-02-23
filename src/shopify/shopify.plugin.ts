@@ -1,8 +1,8 @@
 import * as request from 'request-promise-native';
 import { Plugin } from '../plugin';
-import { Product } from './product';
-import { ProductImage } from './product-image';
-import { ProductListing } from './product-listing';
+import { Product } from './product.resource';
+import { ProductImage } from './product-image.resource';
+import { ProductListing } from './product-listing.resource';
 
 export class Shopify extends Plugin {
   constructor() {

@@ -1,5 +1,5 @@
 import { Plugin } from '../plugin';
-import { Test } from './test';
+import { Test } from './test.resource';
 
 export class Null extends Plugin {
   constructor() {

@@ -1,2 +1,2 @@
 export * from './null.plugin';
-export * from './test';
+export * from './test.resource';

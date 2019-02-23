@@ -1,2 +1,2 @@
 export * from './shopify-storefront.plugin';
-export * from './product';
+export * from './product.resource';

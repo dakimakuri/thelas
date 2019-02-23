@@ -1,5 +1,5 @@
 import { Plugin } from '../plugin';
-import { Product } from './product';
+import { Product } from './product.resource';
 
 export class DShipChina extends Plugin {
   constructor() {

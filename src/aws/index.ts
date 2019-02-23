@@ -1,2 +1,2 @@
 export * from './aws.plugin';
-export * from './s3-bucket-object';
+export * from './s3-bucket-object.resource';
