@@ -355,4 +355,23 @@ export class ResourceGroup extends EventEmitter {
       this.emit('done', create.name);
     }
   }
+
+  async import(name: string, id: string, data: any = {}) {
+    let spl = name.split('.');
+    if (spl.length != 3) {
+      throw new Error('Bad resource format: ' + name);
+    }
+    let plugin = this.plugins.get(spl[0]);
+    if (!plugin) {
+      throw new Error('Invalid plugin: ' + spl[0]);
+    }
+    let resourceType = plugin.getResource(spl[1]);
+    if (!resourceType) {
+      throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
+    }
+    let resource = new resourceType(name);
+    let result = await resource.import(id);
+    _.assign(result.data, data);
+    this.state[name] = result;
+  }
 }

@@ -101,6 +101,10 @@ export class ProductImageResource extends Resource {
     return data;
   }
 
+  import(id: string) {
+    throw new Error('NYI');
+  }
+
   private translate(data: any, attributes: any) {
     data = _.clone(data);
     if (attributes) {

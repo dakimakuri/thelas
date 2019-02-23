@@ -50,4 +50,5 @@ export abstract class Resource {
   abstract update(event: any): any;
   abstract destroy(event: any): void;
   abstract sync(data: any, attributes: any): any;
+  abstract import(id: string): any;
 }

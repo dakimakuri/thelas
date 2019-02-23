@@ -40,4 +40,8 @@ export class TestResource extends Resource {
   async sync(data: any) {
     return data;
   }
+
+  import(id: string) {
+    throw new Error('NYI');
+  }
 }

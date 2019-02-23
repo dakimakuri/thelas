@@ -91,6 +91,10 @@ export class ProductResource extends Resource {
     return data;
   }
 
+  import(id: string) {
+    throw new Error('NYI');
+  }
+
   private async req(route: string, data: any, attributes: any): Promise<any> {
     let dshipchina = this.providers['dshipchina'];
     let url = `https://www.dshipchina.com/api1/${route}.php`;

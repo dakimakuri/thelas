@@ -99,4 +99,8 @@ export class S3BucketObjectResource extends Resource {
     data.contents = result.Body.toString();
     return data;
   }
+
+  import(id: string) {
+    throw new Error('NYI');
+  }
 }

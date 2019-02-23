@@ -70,6 +70,10 @@ export class ProductListingResource extends Resource {
     }
   }
 
+  import(id: string) {
+    throw new Error('NYI');
+  }
+
   private attributes(product_listing: any) {
     return {
       product_id: product_listing.product_id

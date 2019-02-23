@@ -59,4 +59,8 @@ export class ProductResource extends Resource {
   async sync(data: any, attributes: any) {
     return data;
   }
+
+  import(id: string) {
+    throw new Error('NYI');
+  }
 }
