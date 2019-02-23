@@ -1,3 +1,4 @@
+declare let require: any;
 require('isomorphic-fetch');
 import { Resource } from '../resource';
 import { ShopifyStorefrontProvider } from './shopify-storefront.provider';
@@ -60,7 +61,26 @@ export class ProductResource extends Resource {
     return data;
   }
 
-  import(id: string) {
-    throw new Error('NYI');
+  async import(id: string) {
+    let sf = this.providers['storefront'];
+    let products = await getProducts(sf.domain, sf.access_token);
+    for (let product of products) {
+      if (product.handle === id) {
+        let result: any = { id: product.id, handle: product.handle, variants: [] };
+        for (let variant of product.variants) {
+          result.variants.push({
+            id: variant.id,
+            sku: variant.sku
+          });
+        }
+        return {
+          data: {
+            handle: id
+          },
+          attributes: result
+        };
+      }
+    }
+    throw new Error('Failed to import shopify storefront product: ' + id);
   }
 }
