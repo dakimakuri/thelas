@@ -1,6 +1,7 @@
 import { Args } from './args';
 import { Plugin } from './plugin';
 import { Shopify } from './shopify';
+import { ShopifyStorefront } from './shopify-storefront';
 import { Null } from './null';
 import { FS } from './fs';
 import { DShipChina } from './dshipchina';
@@ -12,7 +13,6 @@ import * as EventEmitter from 'events';
 const chalk = require('chalk');
 
 function iterateObject(obj: any, cb: any, path: string[] = []) {
-  obj = cb(obj, path.join('.'));
   if (obj instanceof Array) {
     for (let i = 0; i < obj.length; ++i) {
       obj[i] = iterateObject(obj[i], cb, _.concat(path, String(i)));
@@ -22,7 +22,7 @@ function iterateObject(obj: any, cb: any, path: string[] = []) {
       obj[k] = iterateObject(obj[k], cb, _.concat(path, k));
     }
   }
-  return obj;
+  return cb(obj, path.join('.'));
 }
 
 export class ResourceGroup extends EventEmitter {
@@ -32,6 +32,7 @@ export class ResourceGroup extends EventEmitter {
   constructor() {
     super();
     this.plugins.set('shopify', new Shopify());
+    this.plugins.set('shopify-storefront', new ShopifyStorefront());
     this.plugins.set('null', new Null());
     this.plugins.set('fs', new FS());
     this.plugins.set('dshipchina', new DShipChina());
@@ -117,7 +118,7 @@ export class ResourceGroup extends EventEmitter {
       depends[name] = [];
       if (input[name] != null) {
         iterateObject(input[name], (obj: any, path: string) => {
-          if (obj['$ref']) {
+          if (obj && obj['$ref']) {
             let targetName = obj['$ref'].substr(0, obj['$ref'].lastIndexOf(':'));
             depends[name].push(targetName);
           }
@@ -159,19 +160,24 @@ export class ResourceGroup extends EventEmitter {
     }
     for (let name of createOrder) {
       if (input[name] != null) {
-        input[name] = iterateObject(input[name], (obj: any, path: string) => {
+        input[name] = iterateObject(input[name], (obj: any, path: string, parent: any) => {
+          let root = true;
+          if (path !== '') {
+            let spl = path.split('.');
+            for (let i = 0; i < spl.length; ++i) {
+              if (spl[i] === '$ref' || spl[i] === '$str' || spl[i] === '$array' || spl[i] === '$map' || spl[i] === '$findBy') {
+                root = false;
+              }
+            }
+          }
+          let stateDiff = !root || syncData[name] === null || !this.state._original || !this.state._original[name] || !_.isEqual(_.get(this.state._original[name], path), _.get(originalInput[name], path));
           if (obj['$ref']) {
             let targetName = obj['$ref'].substr(0, obj['$ref'].lastIndexOf(':'));
             let targetAttr = obj['$ref'].substr(obj['$ref'].lastIndexOf(':') + 1);
             let fetch = () => _.get(this.state[targetName].attributes, targetAttr);
-            if (syncData[name] === null || this.state[targetName].data === null) {
-              return fetch;
-            } else if (!this.state._original || !this.state._original[name]) {
+            if (stateDiff || this.state[targetName].data === null) {
               return fetch;
             } else {
-              if (!_.isEqual(_.get(this.state._original[name], path), obj)) {
-                return fetch;
-              }
               let changedAttrs: string[] = [];
               for (let change of diffs[targetName].changes) {
                 changedAttrs = _.concat(changedAttrs, change.schema.attributes);
@@ -183,7 +189,101 @@ export class ResourceGroup extends EventEmitter {
               if (!changedAttrs || changedAttrs.indexOf(targetAttr) != -1) {
                 return fetch;
               } else {
-                return _.get(syncData[name], path);
+                if (root) {
+                  return _.get(syncData[name], path);
+                } else {
+                  return obj;
+                }
+              }
+            }
+          } else if (obj['$str'] != null) {
+            if (!stateDiff) {
+              return _.get(syncData[name], path);
+            }
+            if (obj['$str'] instanceof Function) {
+              return () => JSON.stringify(obj['$str'](), null, 2);
+            } else {
+              return JSON.stringify(obj['$str'], null, 2);
+            }
+          } else if (obj['$map'] != null) {
+            if (!stateDiff) {
+              return _.get(syncData[name], path);
+            }
+            let result: any = {};
+            let fn = false;
+            for (let key in obj['$map']) {
+              if (obj['$map'][key] instanceof Function) {
+                fn = true;
+              }
+              result[key] = obj['$map'][key];
+            }
+            if (fn) {
+              return () => {
+                for (let key in result) {
+                  if (result[key] instanceof Function) {
+                    result[key] = result[key]();
+                  }
+                }
+                return result;
+              };
+            } else {
+              return result;
+            }
+          } else if (obj['$array'] != null) {
+            if (!stateDiff) {
+              return _.get(syncData[name], path);
+            }
+            let result: any = [];
+            let fn = false;
+            for (let i = 0; i < obj['$array'].length; ++i) {
+              if (obj['$array'][i] instanceof Function) {
+                fn = true;
+              }
+              result.push(obj['$array'][i]);
+            }
+            if (fn) {
+              return () => {
+                for (let i = 0; i < result.length; ++i) {
+                  if (result[i] instanceof Function) {
+                    result[i] = result[i]();
+                  }
+                }
+                return result;
+              };
+            } else {
+              return result;
+            }
+          } else if (obj['$findBy'] != null) {
+            if (!stateDiff) {
+              return _.get(syncData[name], path);
+            }
+            let collection = obj['$findBy'].collection;
+            let key = obj['$findBy'].key;
+            let value = obj['$findBy'].value;
+            let prop = obj['$findBy'].prop;
+            if (collection instanceof Function || key instanceof Function || value instanceof Function) {
+              return () => {
+                if (collection instanceof Function) collection = collection();
+                if (key instanceof Function) key = key();
+                if (value instanceof Function) value = value();
+                if (prop instanceof Function) prop = value();
+                let predicate: any = {};
+                predicate[key] = value;
+                let f = _.find(collection, predicate);
+                if (prop) {
+                  return f[prop];
+                } else {
+                  return f;
+                }
+              };
+            } else {
+              let predicate: any = {};
+              predicate[key] = value;
+              let f = _.find(collection, predicate)[key];
+              if (prop) {
+                return f[prop];
+              } else {
+                return f;
               }
             }
           }
