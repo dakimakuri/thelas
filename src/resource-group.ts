@@ -122,6 +122,7 @@ export class ResourceGroup extends EventEmitter {
     for (let name in resources) {
       syncData[name] = null;
       if (this.state[name] && this.state[name].data) {
+        this.emit('sync', name);
         syncData[name] = await resources[name].sync(_.cloneDeep(this.state[name].data), _.cloneDeep(this.state[name].attributes));
       }
       depends[name] = [];

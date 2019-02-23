@@ -83,6 +83,7 @@ let argv = yargs
     group.on('create', (name: string) => console.log(`Creating ${name}...`));
     group.on('update', (name: string) => console.log(`Updating ${name}...`));
     group.on('destroy', (name: string) => console.log(`Destroying ${name}...`));
+    group.on('sync', (name: string) => console.log(`Syncing ${name}...`));
     try {
       group.state = await fs.readJson('state.json');
     } catch (err) {
