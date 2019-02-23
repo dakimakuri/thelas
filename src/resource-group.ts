@@ -10,6 +10,8 @@ import { Resource } from './resource';
 import { validate } from 'jsonschema';
 import * as _ from 'lodash';
 import * as EventEmitter from 'events';
+import * as md5 from 'md5';
+import * as fs from 'fs';
 const chalk = require('chalk');
 
 function iterateObject(obj: any, cb: any, path: string[] = []) {
@@ -172,7 +174,7 @@ export class ResourceGroup extends EventEmitter {
           if (path !== '') {
             let spl = path.split('.');
             for (let i = 0; i < spl.length; ++i) {
-              if (spl[i] === '$ref' || spl[i] === '$str' || spl[i] === '$array' || spl[i] === '$map' || spl[i] === '$findBy') {
+              if (spl[i] === '$ref' || spl[i] === '$str' || spl[i] === '$array' || spl[i] === '$map' || spl[i] === '$findBy' || spl[i] === '$md5') {
                 root = false;
               }
             }
@@ -293,6 +295,16 @@ export class ResourceGroup extends EventEmitter {
                 return f;
               }
             }
+          } else if (obj['$md5'] != null) {
+            if (obj['$md5'] instanceof Function) {
+              return () => {
+                let buf = fs.readFileSync(obj['$md5']());
+                return md5(buf);
+              };
+            } else {
+              let buf = fs.readFileSync(obj['$md5']);
+              return md5(buf);
+            }
           }
           return obj;
         });
@@ -364,6 +376,7 @@ export class ResourceGroup extends EventEmitter {
   }
 
   async import(input: any, name: string, id: string) {
+    let originalInput = _.cloneDeep(input);
     input = _.cloneDeep(input);
     let resources: any = this.buildResources(input);
     let resource = resources[name];
@@ -373,7 +386,10 @@ export class ResourceGroup extends EventEmitter {
     let result = await resource.import(id);
     this.state._original = this.state._original || {};
     this.state._original[name] = _.cloneDeep(input[name]);
-    _.assign(result.data, input[name]);
+    let diff = await this.diff(originalInput);
+    resource = _.find(diff, { name: name }) as any;
+    // TODO: detect if importing with out-of-date parent resource state, can get wrong values from dependencies
+    _.assign(result.data, await Args.applyCalculations(resource.data));
     this.state[name] = result;
   }
 }
