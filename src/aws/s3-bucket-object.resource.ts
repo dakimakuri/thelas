@@ -6,7 +6,7 @@ import * as AWS from 'aws-sdk';
 
 const apiVersion = '2006-03-01';
 
-export class S3BucketObject extends Resource {
+export class S3BucketObjectResource extends Resource {
 
   constructor(name: string) {
     super(name, {

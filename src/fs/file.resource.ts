@@ -3,7 +3,7 @@ import * as path from 'path';
 import * as _ from 'lodash';
 import { Resource } from '../resource';
 
-export class File extends Resource {
+export class FileResource extends Resource {
   constructor(name: string) {
     super(name, {
       type: 'object',

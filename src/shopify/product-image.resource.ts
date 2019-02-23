@@ -4,7 +4,7 @@ import { Resource } from '../resource';
 import { getProducts } from './shopify.plugin';
 import { ShopifyProvider } from './shopify.provider';
 
-export class ProductImage extends Resource {
+export class ProductImageResource extends Resource {
   constructor(name: string) {
     super(name, {
       type: 'object',

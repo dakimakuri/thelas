@@ -1,11 +1,11 @@
 import { Args } from './args';
 import { Plugin } from './plugin';
-import { Shopify } from './shopify';
-import { ShopifyStorefront } from './shopify-storefront';
-import { Null } from './null';
-import { FS } from './fs';
-import { DShipChina } from './dshipchina';
-import { AWS } from './aws';
+import { ShopifyPlugin } from './shopify';
+import { ShopifyStorefrontPlugin } from './shopify-storefront';
+import { NullPlugin } from './null';
+import { FSPlugin } from './fs';
+import { DShipChinaPlugin } from './dshipchina';
+import { AWSPlugin } from './aws';
 import { Resource } from './resource';
 import { validate } from 'jsonschema';
 import * as _ from 'lodash';
@@ -31,12 +31,12 @@ export class ResourceGroup extends EventEmitter {
 
   constructor() {
     super();
-    this.plugins.set('shopify', new Shopify());
-    this.plugins.set('shopify-storefront', new ShopifyStorefront());
-    this.plugins.set('null', new Null());
-    this.plugins.set('fs', new FS());
-    this.plugins.set('dshipchina', new DShipChina());
-    this.plugins.set('aws', new AWS());
+    this.plugins.set('shopify', new ShopifyPlugin());
+    this.plugins.set('shopify-storefront', new ShopifyStorefrontPlugin());
+    this.plugins.set('null', new NullPlugin());
+    this.plugins.set('fs', new FSPlugin());
+    this.plugins.set('dshipchina', new DShipChinaPlugin());
+    this.plugins.set('aws', new AWSPlugin());
   }
 
   addPlugin(plugin: Plugin) {

@@ -1,6 +1,6 @@
 import { Resource } from '../resource';
 
-export class Test extends Resource {
+export class TestResource extends Resource {
   constructor(name: string) {
     super(name, {
       type: 'object',

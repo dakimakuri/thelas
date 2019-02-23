@@ -1,9 +1,9 @@
 import { Plugin } from '../plugin';
-import { Test } from './test.resource';
+import { TestResource } from './test.resource';
 
-export class Null extends Plugin {
+export class NullPlugin extends Plugin {
   constructor() {
     super('null');
-    this.addResource('test', Test);
+    this.addResource('test', TestResource);
   }
 }

@@ -13,7 +13,7 @@ export async function getProducts(domain: string, storefrontAccessToken: string)
   return productCache[key];
 }
 
-export class Product extends Resource {
+export class ProductResource extends Resource {
   constructor(name: string) {
     super(name, {
       type: 'object',

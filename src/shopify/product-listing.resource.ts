@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import { Resource } from '../resource';
 import { ShopifyProvider } from './shopify.provider';
 
-export class ProductListing extends Resource {
+export class ProductListingResource extends Resource {
   constructor(name: string) {
     super(name, {
       type: 'object',

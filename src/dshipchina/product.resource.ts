@@ -11,7 +11,7 @@ export async function getProducts(key: string): Promise<any> {
   return productCache[key];
 }
 
-export class Product extends Resource {
+export class ProductResource extends Resource {
   constructor(name: string) {
     super(name, {
       type: 'object',

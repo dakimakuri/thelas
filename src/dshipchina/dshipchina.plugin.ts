@@ -1,9 +1,9 @@
 import { Plugin } from '../plugin';
-import { Product } from './product.resource';
+import { ProductResource } from './product.resource';
 
-export class DShipChina extends Plugin {
+export class DShipChinaPlugin extends Plugin {
   constructor() {
     super('dshipchina')
-    this.addResource('product', Product);
+    this.addResource('product', ProductResource);
   }
 }

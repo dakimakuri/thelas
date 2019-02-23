@@ -1,9 +1,9 @@
 import { Plugin } from '../plugin';
-import { File } from './file.resource';
+import { FileResource } from './file.resource';
 
-export class FS extends Plugin {
+export class FSPlugin extends Plugin {
   constructor() {
     super('fs')
-    this.addResource('file', File);
+    this.addResource('file', FileResource);
   }
 }
