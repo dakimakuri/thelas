@@ -51,6 +51,7 @@ export class FileResource extends Resource {
     let data: any = {
       filename: id
     };
+    await fs.stat(id);
     data = await this.sync(data);
     let attributes = await this.attributes(data);
     return { data, attributes };

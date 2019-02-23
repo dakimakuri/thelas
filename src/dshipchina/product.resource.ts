@@ -91,8 +91,17 @@ export class ProductResource extends Resource {
     return data;
   }
 
-  import(id: string) {
-    throw new Error('NYI');
+  async import(id: string) {
+    let dshipchina = this.providers['dshipchina'];
+    let products = await getProducts(dshipchina.key);
+    let product = _.find(products, { product_id: id }) as any;
+    if (!product) throw new Error('Failed to import ID: ' + id);
+    return {
+      data: {},
+      attributes: {
+        product_id: id
+      }
+    };
   }
 
   private async req(route: string, data: any, attributes: any): Promise<any> {

@@ -6,6 +6,7 @@ import { Resource } from './resource';
 import { Args } from './args';
 const chalk = require('chalk');
 const makeError = require('make-error');
+const yargs = require('yargs');
 
 const UserCancelledError = makeError('UserCancelledError');
 
@@ -74,7 +75,8 @@ function ref(name: string, attribute: string) {
   };
 }
 
-(async() => {
+let argv = yargs
+.command('apply', 'apply changes', (yargs) => {}, async (argv) => {
   try {
     let input = await fs.readJson('input.json');
     let group = new ResourceGroup();
@@ -119,4 +121,53 @@ function ref(name: string, attribute: string) {
   } finally {
     rl.close();
   }
-})();
+})
+.command('import <name> <id>', 'import resource', (yargs) => {}, async (argv) => {
+  rl.close();
+  let input = await fs.readJson('input.json');
+  let group = new ResourceGroup();
+  try {
+    group.state = await fs.readJson('state.json');
+  } catch (err) {
+    if (_.get(err, 'code') !== 'ENOENT') {
+      throw err;
+    }
+  }
+  if (!input[argv.name]) {
+    throw new Error('The resource "' + argv.name + '" does not exist in input.json.');
+  }
+  await group.import(input, argv.name, argv.id);
+  await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+})
+.command('import-list <input>', 'import resource', (yargs) => {}, async (argv) => {
+  rl.close();
+  let input = await fs.readJson('input.json');
+  let group = new ResourceGroup();
+  try {
+    group.state = await fs.readJson('state.json');
+  } catch (err) {
+    if (_.get(err, 'code') !== 'ENOENT') {
+      throw err;
+    }
+  }
+  let imports = await fs.readJson(argv.input);
+  for (let name in imports) {
+    let id = imports[name];
+    if (input[name]) {
+      try {
+        await group.import(input, name, id);
+        console.log(chalk.green('Success: ' + name));
+      } catch (err) {
+        console.log(chalk.red('Failed: ' + name));
+      }
+    } else {
+      console.log(chalk.yellow('Ignoring: ' + name));
+    }
+  }
+  await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+})
+.option('verbose', {
+  alias: 'v',
+  default: true
+})
+.argv;

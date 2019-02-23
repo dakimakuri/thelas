@@ -43,15 +43,8 @@ export class ResourceGroup extends EventEmitter {
     this.plugins.set(plugin.name, plugin);
   }
 
-  async diff(input: any) {
-    input = _.cloneDeep(input);
-    let originalInput = _.cloneDeep(input);
-    let syncData: any = {};
+  private buildResources(input: any) {
     let resources: any = {};
-    let diffs: any = {};
-    let depends: any = {};
-    let updates: any[] = [];
-    let found = [];
     for (let key in this.state) {
       if (key.length > 0 && key[0] === '_') {
         continue;
@@ -111,9 +104,23 @@ export class ResourceGroup extends EventEmitter {
         resource.providers[key] = providers[provider.name][profile];
       }
       resources[name] = resource;
+    }
+    return resources;
+  }
+
+  async diff(input: any) {
+    input = _.cloneDeep(input);
+    let originalInput = _.cloneDeep(input);
+    let syncData: any = {};
+    let resources: any = this.buildResources(input);
+    let diffs: any = {};
+    let depends: any = {};
+    let updates: any[] = [];
+    let found = [];
+    for (let name in resources) {
       syncData[name] = null;
       if (this.state[name] && this.state[name].data) {
-        syncData[name] = await resource.sync(_.cloneDeep(this.state[name].data), _.cloneDeep(this.state[name].attributes));
+        syncData[name] = await resources[name].sync(_.cloneDeep(this.state[name].data), _.cloneDeep(this.state[name].attributes));
       }
       depends[name] = [];
       if (input[name] != null) {
@@ -356,22 +363,17 @@ export class ResourceGroup extends EventEmitter {
     }
   }
 
-  async import(name: string, id: string, data: any = {}) {
-    let spl = name.split('.');
-    if (spl.length != 3) {
-      throw new Error('Bad resource format: ' + name);
+  async import(input: any, name: string, id: string) {
+    input = _.cloneDeep(input);
+    let resources: any = this.buildResources(input);
+    let resource = resources[name];
+    if (!resource) {
+      throw new Error('Resource does not exist in input: ' + name);
     }
-    let plugin = this.plugins.get(spl[0]);
-    if (!plugin) {
-      throw new Error('Invalid plugin: ' + spl[0]);
-    }
-    let resourceType = plugin.getResource(spl[1]);
-    if (!resourceType) {
-      throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
-    }
-    let resource = new resourceType(name);
     let result = await resource.import(id);
-    _.assign(result.data, data);
+    this.state._original = this.state._original || {};
+    this.state._original[name] = _.cloneDeep(input[name]);
+    _.assign(result.data, input[name]);
     this.state[name] = result;
   }
 }

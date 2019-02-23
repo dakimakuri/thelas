@@ -167,8 +167,17 @@ export class ProductResource extends Resource {
     return data;
   }
 
-  import(id: string) {
-    throw new Error('NYI');
+  async import(id: string) {
+    let shopify = this.providers['shopify'];
+    let products = await getProducts(shopify);
+    let product = _.find(products, { id }) as any;
+    if (!product) {
+      throw new Error('Shopify Product not found: ' + id);
+    }
+    return {
+      data: {},
+      attributes: this.attributes(product)
+    };
   }
 
   private translate(data: any, attributes: any) {
