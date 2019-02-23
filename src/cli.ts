@@ -137,7 +137,8 @@ let argv = yargs
   if (!input[argv.name]) {
     throw new Error('The resource "' + argv.name + '" does not exist in input.json.');
   }
-  await group.import(input, argv.name, argv.id);
+  let diff = await group.diff(input);
+  await group.import(diff, argv.name, argv.id);
   await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
 })
 .command('import-list <input>', 'import resource', (yargs) => {}, async (argv) => {
@@ -152,11 +153,12 @@ let argv = yargs
     }
   }
   let imports = await fs.readJson(argv.input);
+  let diff = await group.diff(input);
   for (let name in imports) {
     let id = imports[name];
     if (input[name]) {
       try {
-        await group.import(input, name, id);
+        await group.import(diff, name, id);
         console.log(chalk.green('Success: ' + name));
       } catch (err) {
         console.log(chalk.red('Failed: ' + name));

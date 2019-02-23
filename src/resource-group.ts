@@ -376,21 +376,18 @@ export class ResourceGroup extends EventEmitter {
     }
   }
 
-  async import(input: any, name: string, id: string) {
-    let originalInput = _.cloneDeep(input);
-    input = _.cloneDeep(input);
-    let resources: any = this.buildResources(input);
-    let resource = resources[name];
+  async import(diff: any, name: string, id: string) {
+    let info = _.find(diff, { name }) as any;
+    let resource = info.resource;
     if (!resource) {
       throw new Error('Resource does not exist in input: ' + name);
     }
     let result = await resource.import(id);
     this.state._original = this.state._original || {};
-    this.state._original[name] = _.cloneDeep(input[name]);
-    let diff = await this.diff(originalInput);
+    this.state._original[name] = info.originalData;
     resource = _.find(diff, { name: name }) as any;
     // TODO: detect if importing with out-of-date parent resource state, can get wrong values from dependencies
-    _.assign(result.data, await Args.applyCalculations(resource.data));
+    _.assign(result.data, await Args.applyCalculations(info.data));
     this.state[name] = result;
   }
 }
