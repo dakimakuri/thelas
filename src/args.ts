@@ -1,19 +1,6 @@
 import * as _ from 'lodash';
 import { validate } from 'jsonschema';
-
-function type(o: any) {
-  if (o === undefined) {
-      return 'undefined';
-  } else if (o === null) {
-      return 'null';
-  } else if (o instanceof Array) {
-      return 'array';
-  } else if (o instanceof Object) {
-      return 'object';
-  } else {
-      return typeof o;
-  }
-}
+import { type } from './manip';
 
 function recursiveKeys(o: any, path: string[] = [], schemaPath: string[] = []) {
   let keys: any[] = [];
@@ -237,16 +224,16 @@ export class Args {
     return obj;
   }
 
-  static applyCalculations(obj: any) {
+  static async applyCalculations(obj: any) {
     if (obj instanceof Function) {
-      return obj();
+      return await obj();
     } else if (obj instanceof Array) {
       for (let i = 0; i < obj.length; ++i) {
-        obj[i] = Args.applyCalculations(obj[i]);
+        obj[i] = await Args.applyCalculations(obj[i]);
       }
     } else if (obj instanceof Object) {
       for (let k in obj) {
-        obj[k] = Args.applyCalculations(obj[k]);
+        obj[k] = await Args.applyCalculations(obj[k]);
       }
     }
     return obj;

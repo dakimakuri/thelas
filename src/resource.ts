@@ -47,7 +47,7 @@ export abstract class Resource {
     }
     if (diff.create) {
       attributes = await this.create({
-        data: Args.applyCalculations(diff.create),
+        data: await Args.applyCalculations(diff.create),
         changes: diff.changes,
         attributes: attributes
       });
@@ -56,7 +56,7 @@ export abstract class Resource {
     if (diff.update) {
       attributes = await this.update({
         from: diff.update.from,
-        to: Args.applyCalculations(diff.update.to),
+        to: await Args.applyCalculations(diff.update.to),
         changes: diff.changes,
         attributes: attributes
       });

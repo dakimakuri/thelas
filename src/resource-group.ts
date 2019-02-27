@@ -7,25 +7,13 @@ import { FSPlugin } from './fs';
 import { DShipChinaPlugin } from './dshipchina';
 import { AWSPlugin } from './aws';
 import { Resource } from './resource';
+import { Interpolator } from './interpolation';
 import { validate } from 'jsonschema';
 import * as _ from 'lodash';
 import * as EventEmitter from 'events';
 import * as md5 from 'md5';
 import * as fs from 'fs';
 const chalk = require('chalk');
-
-function iterateObject(obj: any, cb: any, path: string[] = []) {
-  if (obj instanceof Array) {
-    for (let i = 0; i < obj.length; ++i) {
-      obj[i] = iterateObject(obj[i], cb, _.concat(path, String(i)));
-    }
-  } else if (obj instanceof Object) {
-    for (let k in obj) {
-      obj[k] = iterateObject(obj[k], cb, _.concat(path, k));
-    }
-  }
-  return cb(obj, path.join('.'));
-}
 
 export class ResourceGroup extends EventEmitter {
   public state: any = {};
@@ -119,6 +107,37 @@ export class ResourceGroup extends EventEmitter {
     let depends: any = {};
     let updates: any[] = [];
     let found = [];
+    let interpolator = new Interpolator();
+    interpolator.pre('ref', (value: any, path: string, context: any) => {
+      let index = value.indexOf(':');
+      if (index === -1) {
+        throw new Error('Bad $ref: ' + value);
+      }
+      let resource = value.substr(0, index);
+      let key = value.substr(index + 1);
+      depends[context.name].push(resource);
+      return { resource, key, path, name: context.name };
+    });
+    interpolator.op('ref', (obj: any) => {
+      let stateDiff = syncData[obj.name] === null || !this.state._original || !this.state._original[obj.name] || !_.isEqual(_.get(this.state._original[obj.name], obj.path), _.get(originalInput[obj.name], obj.path)) || !this.state[obj.resource] || this.state[obj.resource].data === null;
+      if (!stateDiff) {
+        let changedAttrs: string[] | null = [];
+        for (let change of diffs[obj.resource].changes) {
+          changedAttrs = _.concat(changedAttrs, change.schema.attributes);
+          if (change.schema.fragile) {
+            changedAttrs = null;
+          }
+        }
+        if (!changedAttrs || _.uniq(changedAttrs).indexOf(obj.key) != -1) {
+          stateDiff = true;
+        }
+      }
+      if (stateDiff) {
+        return () => this.state[obj.resource] ? _.get(this.state[obj.resource].attributes, obj.key) : null;
+      } else {
+        return this.state[obj.resource] ? _.get(this.state[obj.resource].attributes, obj.key) : null;
+      }
+    });
     for (let name in resources) {
       syncData[name] = null;
       if (this.state[name] && this.state[name].data) {
@@ -126,15 +145,7 @@ export class ResourceGroup extends EventEmitter {
         syncData[name] = await resources[name].sync(_.cloneDeep(this.state[name].data), _.cloneDeep(this.state[name].attributes));
       }
       depends[name] = [];
-      if (input[name] != null) {
-        iterateObject(input[name], (obj: any, path: string) => {
-          if (obj && obj['$ref']) {
-            let targetName = obj['$ref'].substr(0, obj['$ref'].lastIndexOf(':'));
-            depends[name].push(targetName);
-          }
-          return obj;
-        });
-      }
+      await interpolator.preprocess(input[name], { name });
       found.push(name);
     }
     function checkCircularDependency(root: string, children: any[]) {
@@ -169,150 +180,7 @@ export class ResourceGroup extends EventEmitter {
       }
     }
     for (let name of createOrder) {
-      if (input[name] != null) {
-        input[name] = iterateObject(input[name], (obj: any, path: string, parent: any) => {
-          let root = true;
-          if (path !== '') {
-            let spl = path.split('.');
-            for (let i = 0; i < spl.length; ++i) {
-              if (spl[i] === '$ref' || spl[i] === '$str' || spl[i] === '$array' || spl[i] === '$map' || spl[i] === '$findBy' || spl[i] === '$md5') {
-                root = false;
-              }
-            }
-          }
-          let stateDiff = !root || syncData[name] === null || !this.state._original || !this.state._original[name] || !_.isEqual(_.get(this.state._original[name], path), _.get(originalInput[name], path));
-          if (obj['$ref']) {
-            let targetName = obj['$ref'].substr(0, obj['$ref'].lastIndexOf(':'));
-            let targetAttr = obj['$ref'].substr(obj['$ref'].lastIndexOf(':') + 1);
-            let fetch = () => _.get(this.state[targetName].attributes, targetAttr);
-            if (stateDiff || this.state[targetName].data === null) {
-              return fetch;
-            } else {
-              let changedAttrs: string[] = [];
-              for (let change of diffs[targetName].changes) {
-                changedAttrs = _.concat(changedAttrs, change.schema.attributes);
-                if (change.schema.fragile) {
-                  return null;
-                }
-              }
-              changedAttrs = _.uniq(changedAttrs);
-              if (!changedAttrs || changedAttrs.indexOf(targetAttr) != -1) {
-                return fetch;
-              } else {
-                if (root) {
-                  return _.get(syncData[name], path);
-                } else {
-                  return obj;
-                }
-              }
-            }
-          } else if (obj['$str'] != null) {
-            if (!stateDiff) {
-              return _.get(syncData[name], path);
-            }
-            if (obj['$str'] instanceof Function) {
-              return () => JSON.stringify(obj['$str'](), null, 2);
-            } else {
-              return JSON.stringify(obj['$str'], null, 2);
-            }
-          } else if (obj['$map'] != null) {
-            if (!stateDiff) {
-              return _.get(syncData[name], path);
-            }
-            let result: any = {};
-            let fn = false;
-            for (let key in obj['$map']) {
-              if (obj['$map'][key] instanceof Function) {
-                fn = true;
-              }
-              result[key] = obj['$map'][key];
-            }
-            if (fn) {
-              return () => {
-                for (let key in result) {
-                  if (result[key] instanceof Function) {
-                    result[key] = result[key]();
-                  }
-                }
-                return result;
-              };
-            } else {
-              return result;
-            }
-          } else if (obj['$array'] != null) {
-            if (!stateDiff) {
-              return _.get(syncData[name], path);
-            }
-            let result: any = [];
-            let fn = false;
-            for (let i = 0; i < obj['$array'].length; ++i) {
-              if (obj['$array'][i] instanceof Function) {
-                fn = true;
-              }
-              result.push(obj['$array'][i]);
-            }
-            if (fn) {
-              return () => {
-                for (let i = 0; i < result.length; ++i) {
-                  if (result[i] instanceof Function) {
-                    result[i] = result[i]();
-                  }
-                }
-                return result;
-              };
-            } else {
-              return result;
-            }
-          } else if (obj['$findBy'] != null) {
-            if (!stateDiff) {
-              return _.get(syncData[name], path);
-            }
-            let collection = obj['$findBy'].collection;
-            let key = obj['$findBy'].key;
-            let value = obj['$findBy'].value;
-            let prop = obj['$findBy'].prop;
-            if (collection instanceof Function || key instanceof Function || value instanceof Function) {
-              return () => {
-                if (collection instanceof Function) collection = collection();
-                if (key instanceof Function) key = key();
-                if (value instanceof Function) value = value();
-                if (prop instanceof Function) prop = value();
-                let predicate: any = {};
-                predicate[key] = value;
-                let f = _.find(collection, predicate);
-                if (prop) {
-                  return f[prop];
-                } else {
-                  return f;
-                }
-              };
-            } else {
-              let predicate: any = {};
-              predicate[key] = value;
-              let f = _.find(collection, predicate)[key];
-              if (prop) {
-                return f[prop];
-              } else {
-                return f;
-              }
-            }
-          } else if (obj['$md5'] != null) {
-            if (obj['$md5'] instanceof Function) {
-              return () => {
-                let buf = fs.readFileSync(obj['$md5']());
-                return md5(buf);
-              };
-            } else {
-              let buf = fs.readFileSync(obj['$md5']);
-              return md5(buf);
-            }
-          }
-          return obj;
-        });
-        if (input[name].depends) {
-          delete input[name]['depends'];
-        }
-      }
+      input[name] = await interpolator.process(input[name]);
       let resource = resources[name];
       diffs[name] = Args.diff(resource.args, syncData[name], input[name], false);
       updates.push({

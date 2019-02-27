@@ -18,7 +18,7 @@ export class TestResource extends Resource {
     console.log('Create:', event.data.text);
     console.log();
     return {
-      text: event.data,
+      text: event.data.text,
       stuff: [ 1, 2, 3 ]
     };
   }
@@ -27,7 +27,7 @@ export class TestResource extends Resource {
     console.log('Update:', event.to.text);
     console.log();
     return {
-      text: event.to,
+      text: event.to.text,
       stuff: [ 1, 2, 3 ]
     };
   }
