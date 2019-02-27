@@ -74,7 +74,7 @@ export class Args {
       }
     }
     if (args.type === 'object') {
-      let additional = _.pullAll(_.keys(args), ['type', 'properties', 'allowNull', 'attributes']);
+      let additional = _.pullAll(_.keys(args), ['type', 'properties', 'allowNull', 'default', 'attributes']);
       if (additional.length > 0) {
         err(`Additional property '${additional[0]}' not allowed on type '${args.type}'.`, additional[0]);
       }
@@ -214,8 +214,12 @@ export class Args {
 
   private static applyDefaults(args: Args, obj: any) {
     if (args.type === 'object') {
-      for (let key in args.properties) {
-        obj[key] = Args.applyDefaults(args.properties[key], obj[key]);
+      if (obj) {
+        for (let key in args.properties) {
+          obj[key] = Args.applyDefaults(args.properties[key], obj[key]);
+        }
+      } else {
+        return args.allowNull ? null : (args.default || {});
       }
     } else if (args.type === 'array') {
       if (obj) {
