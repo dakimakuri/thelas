@@ -1,0 +1,23 @@
+{
+  "inputs": [
+    {
+      "mock.resource.test": {
+        "name": "tset"
+      }
+    },
+    {
+      "mock.resource.test": {
+        "name": "test"
+      }
+    }
+  ],
+  "output": {
+    "resources": {
+      "test": {
+        "name": "test",
+        "properties": {},
+        "tags": []
+      }
+    }
+  }
+}

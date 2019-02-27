@@ -1,0 +1,14 @@
+{
+  "inputs": [
+    {
+      "mock.resource.test": {
+        "name": "test"
+      }
+    },
+    {
+    }
+  ],
+  "output": {
+    "resources": {}
+  }
+}

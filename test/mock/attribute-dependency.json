@@ -1,0 +1,34 @@
+{
+  "inputs": [
+    {
+      "mock.resource.foo": {
+        "name": "foo",
+        "tags": [
+          "a",
+          "b",
+          "c"
+        ]
+      },
+      "mock.resource.bar": {
+        "name": "bar",
+        "tags": {
+          "$ref": "mock.resource.foo:tags"
+        }
+      }
+    }
+  ],
+  "output": {
+    "resources": {
+      "foo": {
+        "name": "foo",
+        "properties": {},
+        "tags": [ "a", "b", "c" ]
+      },
+      "bar": {
+        "name": "bar",
+        "properties": {},
+        "tags": [ "a", "b", "c" ]
+      }
+    }
+  }
+}

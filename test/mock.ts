@@ -25,6 +25,27 @@ export class MockResource extends Resource {
           type: 'string',
           required: true,
           fragile: true
+        },
+        properties: {
+          type: 'object',
+          properties: {
+            key: {
+              type: 'string',
+              required: true
+            },
+            key: {
+              type: 'string',
+              required: true
+            }
+          }
+        },
+        tags: {
+          type: 'array',
+          items: {
+            type: 'string',
+            required: true
+          },
+          default: []
         }
       }
     });
@@ -32,18 +53,23 @@ export class MockResource extends Resource {
 
   async create(event: any) {
     active.data.resources[event.data.name] = {
-      name: event.data.name
+      name: event.data.name,
+      properties: event.data.properties,
+      tags: event.data.tags
     };
     return {
-      text: event.data,
-      stuff: [ 1, 2, 3 ]
+      tags: event.data.tags
     };
   }
 
   async update(event: any) {
+    active.data.resources[event.data.name] = {
+      name: event.data.name,
+      properties: event.data.properties,
+      tags: event.data.tags
+    };
     return {
-      text: event.data,
-      stuff: [ 1, 2, 3 ]
+      tags: event.data.tags
     };
   }
 
@@ -61,8 +87,9 @@ function checkMock(name: string) {
     let mock = new MockPlugin();
     let group = new ResourceGroup();
     group.addPlugin(mock);
-    let inputs = await fs.readJson(`./test/mock/${name}.json`);
-    let output = await fs.readJson(`./test/mock/${name}.out.json`);
+    let test = await fs.readJson(`./test/mock/${name}.json`);
+    let inputs = test.inputs;
+    let output = test.output;
     for (let input of inputs) {
       await group.apply(await group.diff(input));
     }
@@ -77,7 +104,6 @@ describe('Mock Tests', function() {
   for (let file of fs.readdirSync('./test/mock')) {
     if (file.endsWith('.json')) {
       try {
-        fs.statSync('./test/mock/' + file.substr(0, file.length - 5) + '.out.json');
         checkMock(file.substr(0, file.length - 5));
       } catch (err) {
       }
