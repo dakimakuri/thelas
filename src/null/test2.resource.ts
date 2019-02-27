@@ -1,4 +1,4 @@
-import { Resource } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { NullProvider } from './null.provider';
 
 export class Test2Resource extends Resource {
@@ -19,7 +19,7 @@ export class Test2Resource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     console.log('Create:', event.data.text, this.providers);
     console.log();
     return {
@@ -28,16 +28,16 @@ export class Test2Resource extends Resource {
     };
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     console.log('Update:', event.to.text);
     console.log();
     return {
-      text: event.data,
+      text: event.to,
       stuff: [ 1, 2, 3 ]
     };
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
     console.log('Destroy:', event.oldData.text);
     console.log();
   }

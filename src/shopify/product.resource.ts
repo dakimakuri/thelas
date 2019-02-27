@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { getProducts } from './shopify.plugin';
 import { ShopifyProvider } from './shopify.provider';
 

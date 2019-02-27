@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { DShipChinaProvider } from './dshipchina.provider';
 
 let productCache: any = {};
@@ -40,11 +40,11 @@ export class ProductResource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     return this.attributes((await this.req('createproduct', event.data, event.attributes)));
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     if (event.from.note && !event.to.note) {
       event.to.note = '';
     }
@@ -58,7 +58,7 @@ export class ProductResource extends Resource {
     return event.attributes;
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
     throw new Error('Cannot destroy DShipChina products. You must do this manually.');
   }
 

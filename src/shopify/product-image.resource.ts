@@ -1,7 +1,7 @@
 declare let require: any;
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { getProducts } from './shopify.plugin';
 import { ShopifyProvider } from './shopify.provider';
 const Jimp = require('jimp');
@@ -57,7 +57,7 @@ export class ProductImageResource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     let shopify = this.providers['shopify'];
     let data = await this.translate(event.data, event.attributes);
     let image = JSON.parse(await request.post(`https://${shopify.shop}.myshopify.com/admin/products/${event.data.product_id}/images.json`, {
@@ -76,7 +76,7 @@ export class ProductImageResource extends Resource {
     return this.attributes(image);
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     let shopify = this.providers['shopify'];
     let data = await this.translate(event.to, event.attributes);
     let image = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/products/${event.to.product_id}/images/${event.attributes.id}.json`, {
@@ -95,7 +95,7 @@ export class ProductImageResource extends Resource {
     return this.attributes(image);
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
     let shopify = this.providers['shopify'];
     JSON.parse(await request.delete(`https://${shopify.shop}.myshopify.com/admin/products/${event.oldData.product_id}/images/${event.attributes.id}.json`, {
       auth: {

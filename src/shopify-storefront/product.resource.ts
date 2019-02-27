@@ -1,6 +1,6 @@
 declare let require: any;
 require('isomorphic-fetch');
-import { Resource } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { ShopifyStorefrontProvider } from './shopify-storefront.provider';
 const shopify = require('shopify-buy');
 
@@ -32,7 +32,7 @@ export class ProductResource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     let sf = this.providers['storefront'];
     let products = await getProducts(sf.domain, sf.access_token);
     for (let product of products) {
@@ -50,11 +50,11 @@ export class ProductResource extends Resource {
     throw new Error('Cannot find shopify storefront product: ' + event.data.handle);
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     throw new Error('Cannot update shopify storefront product.');
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
   }
 
   async sync(data: any, attributes: any) {

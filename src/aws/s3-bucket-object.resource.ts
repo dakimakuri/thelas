@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { AWSProvider } from './aws.provider';
 import * as AWS from 'aws-sdk';
 
@@ -34,7 +34,7 @@ export class S3BucketObjectResource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     const aws = this.providers['aws'];
     const s3 = new AWS.S3({
       apiVersion,
@@ -51,7 +51,7 @@ export class S3BucketObjectResource extends Resource {
     return event.data;
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     const aws = this.providers['aws'];
     const s3 = new AWS.S3({
       apiVersion,
@@ -68,7 +68,7 @@ export class S3BucketObjectResource extends Resource {
     return event.to;
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
     const aws = this.providers['aws'];
     const s3 = new AWS.S3({
       apiVersion,

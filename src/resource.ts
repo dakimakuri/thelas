@@ -3,6 +3,25 @@ import * as _ from 'lodash';
 
 const safeMode = false;
 
+export class ResourceCreateEvent {
+  data: any;
+  changes: any;
+  attributes: any;
+}
+
+export class ResourceUpdateEvent {
+  from: any;
+  to: any;
+  changes: any;
+  attributes: any;
+}
+
+export class ResourceDestroyEvent {
+  oldData: any;
+  changes: any;
+  attributes: any;
+}
+
 export abstract class Resource {
   public providers: any = {};
 
@@ -46,9 +65,9 @@ export abstract class Resource {
     return { data, attributes };
   }
 
-  abstract create(event: any): any;
-  abstract update(event: any): any;
-  abstract destroy(event: any): void;
+  abstract create(event: ResourceCreateEvent): any;
+  abstract update(event: ResourceUpdateEvent): any;
+  abstract destroy(event: ResourceDestroyEvent): void;
   abstract sync(data: any, attributes: any): any;
   abstract import(id: string): any;
 }
