@@ -41,7 +41,8 @@ export class ProductResource extends Resource {
         for (let variant of product.variants) {
           result.variants.push({
             id: variant.id,
-            sku: variant.sku
+            sku: variant.sku,
+            title: variant.title
           });
         }
         return result;
@@ -70,7 +71,8 @@ export class ProductResource extends Resource {
         for (let variant of product.variants) {
           result.variants.push({
             id: variant.id,
-            sku: variant.sku
+            sku: variant.sku,
+            title: variant.title
           });
         }
         return {
