@@ -1,7 +1,7 @@
 import { type, iterateObject } from './manip';
 import * as _ from 'lodash';
 import * as md5 from 'md5';
-import * as fs from 'fs';
+import * as fs from 'fs-extra';
 
 type InterpolatorPreprocess = any;
 type InterpolatorFunction = any;
@@ -10,54 +10,74 @@ export class Interpolator {
   private ops = new Map<string, InterpolatorFunction>();
 
   constructor() {
-    this.op('_add', _.spread(_.add));
-    this.op('_ceil', _.spread(_.ceil));
-    this.op('_divide', _.spread(_.divide));
-    this.op('_floor', _.spread(_.floor));
-    this.op('_max', _.spread(_.max));
-    this.op('_maxBy', _.spread(_.maxBy));
-    this.op('_mean', _.spread(_.mean));
-    this.op('_meanBy', _.spread(_.meanBy));
-    this.op('_min', _.spread(_.min));
-    this.op('_minBy', _.spread(_.minBy));
-    this.op('_multiply', _.spread(_.multiply));
-    this.op('_round', _.spread(_.round));
-    this.op('_subtract', _.spread(_.subtract));
-    this.op('_sum', _.spread(_.sum));
-    this.op('_sumBy', _.spread(_.sumBy));
+    // function expects a single argument
+    const singleArg = (fn: any) => fn;
+    // function expects 0, 1 or many arguments
+    const optionalArgs = (fn: any) => {
+      return function (input: any) {
+        if (input instanceof Array) {
+          return fn.apply(this, input);
+        } else {
+          return fn(input);
+        }
+      }
+    };
+    // function expects 2+ arguments
+    const multiArgs = _.spread;
 
-    this.op('_clamp', _.spread(_.clamp));
-    this.op('_inRange', _.spread(_.inRange));
-    this.op('_random', _.spread(_.random));
+    // math
+    this.op('add',      optionalArgs(_.add));
+    this.op('ceil',     optionalArgs(_.ceil));
+    this.op('divide',   optionalArgs(_.divide));
+    this.op('floor',    optionalArgs(_.floor));
+    this.op('max',      singleArg(_.max));
+    this.op('maxBy',    multiArgs(_.maxBy));
+    this.op('mean',     singleArg(_.mean));
+    this.op('meanBy',   multiArgs(_.meanBy));
+    this.op('min',      singleArg(_.min));
+    this.op('minBy',    multiArgs(_.minBy));
+    this.op('multiply', optionalArgs(_.multiply));
+    this.op('round',    optionalArgs(_.round));
+    this.op('subtract', optionalArgs(_.subtract));
+    this.op('sum',      singleArg(_.sum));
+    this.op('sumBy',    multiArgs(_.sumBy));
 
-    this.op('_camelCase', _.spread(_.camelCase));
-    this.op('_capitalize', _.spread(_.capitalize));
-    this.op('_deburr', _.spread(_.deburr));
-    this.op('_endsWith', _.spread(_.endsWith));
-    this.op('_escape', _.spread(_.escape));
-    this.op('_kebabCase', _.spread(_.kebabCase));
-    this.op('_lowerCase', _.spread(_.lowerCase));
-    this.op('_lowerFirst', _.spread(_.lowerFirst));
-    this.op('_pad', _.spread(_.pad));
-    this.op('_padEnd', _.spread(_.padEnd));
-    this.op('_padStart', _.spread(_.padStart));
-    this.op('_parseInt', _.spread(_.parseInt));
-    this.op('_repeat', _.spread(_.repeat));
-    this.op('_replace', _.spread(_.replace));
-    this.op('_snakeCase', _.spread(_.snakeCase));
-    this.op('_split', _.spread(_.split));
-    this.op('_startCase', _.spread(_.startCase));
-    this.op('_startsWith', _.spread(_.startsWith));
-    this.op('_template', _.spread(_.template));
-    this.op('_toLower', _.spread(_.toLower));
-    this.op('_trim', _.spread(_.trim));
-    this.op('_trimEnd', _.spread(_.trimEnd));
-    this.op('_trimStart', _.spread(_.trimStart));
-    this.op('_truncate', _.spread(_.truncate));
-    this.op('_unescape', _.spread(_.unescape));
-    this.op('_upperCase', _.spread(_.upperCase));
-    this.op('_upperFirst', _.spread(_.upperFirst));
-    this.op('_words', _.spread(_.words));
+    // number
+    this.op('clamp',   multiArgs(_.clamp));
+    this.op('inRange', multiArgs(_.inRange));
+
+    // string
+    this.op('camelCase',  singleArg(_.camelCase));
+    this.op('capitalize', singleArg(_.capitalize));
+    this.op('deburr',     singleArg(_.deburr));
+    this.op('endsWith',   multiArgs(_.endsWith));
+    this.op('escape',     singleArg(_.escape));
+    this.op('kebabCase',  singleArg(_.kebabCase));
+    this.op('lowerCase',  singleArg(_.lowerCase));
+    this.op('lowerFirst', singleArg(_.lowerFirst));
+    this.op('pad',        optionalArgs(_.pad));
+    this.op('padEnd',     optionalArgs(_.padEnd));
+    this.op('padStart',   optionalArgs(_.padStart));
+    this.op('parseInt',   optionalArgs(_.parseInt));
+    this.op('repeat',     optionalArgs(_.repeat));
+    this.op('replace',    multiArgs(_.replace));
+    this.op('snakeCase',  singleArg(_.snakeCase));
+    this.op('split',      optionalArgs(_.split));
+    this.op('startCase',  singleArg(_.startCase));
+    this.op('startsWith', optionalArgs(_.startsWith));
+    this.op('toLower',    singleArg(_.toLower));
+    this.op('toUpper',    singleArg(_.toUpper));
+    this.op('trim',       optionalArgs(_.trim));
+    this.op('trimEnd',    optionalArgs(_.trimEnd));
+    this.op('trimStart',  optionalArgs(_.trimStart));
+    this.op('truncate',   optionalArgs(_.truncate));
+    this.op('unescape',   singleArg(_.unescape));
+    this.op('upperCase',  singleArg(_.upperCase));
+    this.op('upperFirst', singleArg(_.upperFirst));
+    this.op('words',      optionalArgs(_.words));
+
+    // lodash templates
+    this.op('template', optionalArgs((str: string, data: any) => _.template(str)(data)));
 
     this.op('stringify', (o: any) => JSON.stringify(o, null, 2));
     this.op('findBy', (o: any) => {
@@ -75,7 +95,10 @@ export class Interpolator {
       }
     });
     this.op('md5', async (o: any) => {
-      return await md5(fs.readFileSync(o));
+      return await md5(o);
+    });
+    this.op('file', async (o: any) => {
+      return (await fs.readFile(o)).toString();
     });
   }
 

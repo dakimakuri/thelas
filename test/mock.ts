@@ -87,7 +87,7 @@ function checkMock(name: string) {
     let mock = new MockPlugin();
     let group = new ResourceGroup();
     group.addPlugin(mock);
-    let test = await fs.readJson(`./test/mock/${name}.json`);
+    let test = await fs.readJson(`./mock/${name}.json`);
     let inputs = test.inputs;
     let output = test.output;
     for (let input of inputs) {
@@ -101,7 +101,7 @@ function checkMock(name: string) {
 
 var assert = require('assert');
 describe('Mock Tests', function() {
-  for (let file of fs.readdirSync('./test/mock')) {
+  for (let file of fs.readdirSync('./mock')) {
     if (file.endsWith('.json')) {
       try {
         checkMock(file.substr(0, file.length - 5));

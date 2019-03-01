@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-    "test": "ts-mocha ./test/**/*.ts"
+    "test": "cd test && ts-mocha ./**/*.ts"
   },
   "author": "",
   "license": "ISC",
@@ -16,6 +16,7 @@
     "@types/md5": "^2.1.33",
     "@types/node": "^10.12.19",
     "@types/request-promise-native": "^1.0.15",
+    "chai": "^4.2.0",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.9",
     "ts-mocha": "^2.0.0",
