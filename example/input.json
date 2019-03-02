@@ -1,9 +1,10 @@
 {
-  "null.test.test": {
-    "text": "hello"
+  "fs.file.hello": {
+    "filename": "hello.txt",
+    "contents": "hello world"
   },
-  "fs.file.test-file": {
-    "filename": "test.txt",
-    "contents": { "$ref": "null.test.test:stuff.0" }
+  "fs.file.hello_sum": {
+    "filename": "hello.txt.sum",
+    "contents": { "$md5": { "$ref": "fs.file.hello:contents" } }
   }
 }

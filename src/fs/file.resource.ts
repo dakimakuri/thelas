@@ -15,7 +15,13 @@ export class FileResource extends Resource {
         },
         contents: {
           type: 'string',
-          default: ''
+          default: '',
+          attributes: [
+            'filename',
+            'contents',
+            'mtime',
+            'size'
+          ]
         }
       }
     });

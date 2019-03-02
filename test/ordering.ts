@@ -160,4 +160,46 @@ describe('ordering', function() {
       'destroy.test.trace.a'
     ]);
   });
+  it('cascading update', async function() {
+    let group = new ResourceGroup();
+    await group.apply(await group.diff({
+      'test.trace.a': { data: { a: 5 }, privateData: { b: 1 } },
+      'test.trace.b': { data: { $ref: 'test.trace.a:data' } }
+    }));
+    await group.apply(await group.diff({
+      'test.trace.a': { data: { a: 3 }, privateData: { b: 1 } },
+      'test.trace.b': { data: { $ref: 'test.trace.a:data' } }
+    }));
+    await group.apply(await group.diff({
+      'test.trace.a': { data: { a: 3 }, privateData: { b: 2 } },
+      'test.trace.b': { data: { $ref: 'test.trace.a:data' } }
+    }));
+    await group.apply(await group.diff({
+      'test.trace.a': { data: { a: 3 } },
+      'test.trace.b': { data: { a: 1 } }
+    }));
+    await group.apply(await group.diff({
+      'test.trace.a': { data: { a: 2 } },
+      'test.trace.b': { data: { a: 1 } }
+    }));
+    let logs = group.getPlugin('test').logs;
+    expect(logs).to.eql([
+      'create.test.trace.a',
+      'create.test.trace.b',
+      'sync.test.trace.a',
+      'sync.test.trace.b',
+      'update.test.trace.a',
+      'update.test.trace.b',
+      'sync.test.trace.a',
+      'sync.test.trace.b',
+      'update.test.trace.a',
+      'sync.test.trace.a',
+      'sync.test.trace.b',
+      'update.test.trace.a',
+      'update.test.trace.b',
+      'sync.test.trace.a',
+      'sync.test.trace.b',
+      'update.test.trace.a'
+    ]);
+  });
 });

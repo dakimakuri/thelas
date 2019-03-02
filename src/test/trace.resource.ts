@@ -16,6 +16,10 @@ export class TraceResource extends Resource {
           type: 'json',
           default: {},
           attributes: [ 'data' ]
+        },
+        privateData: {
+          type: 'json',
+          default: {}
         }
       }
     });
@@ -23,12 +27,12 @@ export class TraceResource extends Resource {
 
   async create(event: ResourceCreateEvent) {
     this.plugin.logs.push(`create.${this.name}`);
-    return event.data;
+    return { fragileData: event.data.fragileData, data: event.data.data };
   }
 
   async update(event: ResourceUpdateEvent) {
     this.plugin.logs.push(`update.${this.name}`);
-    return event.to;
+    return { fragileData: event.to.fragileData, data: event.to.data };
   }
 
   async destroy(event: ResourceDestroyEvent) {
