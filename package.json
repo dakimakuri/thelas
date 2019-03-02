@@ -12,7 +12,7 @@
   "bin": {
     "thelas": "./bin/cli.js"
   },
-    "repository": {
+  "repository": {
     "type": "git",
     "url": "git+https://github.com/dakimakuri/thelas.git"
   },
