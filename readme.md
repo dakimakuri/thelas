@@ -2,7 +2,13 @@
 
 Remote state as code. Heavily inspired by [Terraform](https://www.terraform.io/). Name comes from [Drarayne Thelas](https://en.uesp.net/wiki/Morrowind:Drarayne_Thelas) because I think she's funny.
 
+## Getting Started
+
+Install with NPM.
+
 ```npm install -g thelas```
+
+See [Introduction](https://github.com/dakimakuri/thelas/blob/master/docs/introduction.md) for information.
 
 ## Rationale
 
