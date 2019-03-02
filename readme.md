@@ -2,6 +2,8 @@
 
 Remote state as code. Heavily inspired by [Terraform](https://www.terraform.io/). Name comes from [Drarayne Thelas](https://en.uesp.net/wiki/Morrowind:Drarayne_Thelas) because I think she's funny.
 
+```npm install -g thelas```
+
 ## Rationale
 
 At [Dakimakuri](https://dakimakuri.com) we have a lot of near-identical Shopify products that must be created and updated in bulk. Historically this was a manual (and error-prone) process. Mass-updates required writing new scripts for each occasion, which is also error-prone. It worked, but is hardly ideal.
