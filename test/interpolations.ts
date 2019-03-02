@@ -6,6 +6,7 @@ function interpolateCheck(input: any, expected: any) {
     let interpolator = new Interpolator();
     input = await interpolator.preprocess(input);
     input = await interpolator.process(input);
+    input = await Interpolator.postprocess(input);
     expect(input).to.eql(expected);
   });
 }
@@ -13,6 +14,7 @@ function interpolateCheck(input: any, expected: any) {
 describe('interpolations', function() {
   describe('$add', function() {
     interpolateCheck({ $add: 5 }, 5);
+    interpolateCheck({ $add: { $fn: 5 } }, 5);
     interpolateCheck({ $add: [ 5 ] }, 5);
     interpolateCheck({ $add: [ 5, 2 ] }, 7);
     interpolateCheck({ $add: [ 5, 2, 3 ] }, 7);
@@ -222,6 +224,9 @@ describe('interpolations', function() {
   describe('$stringify', function() {
     interpolateCheck({ $stringify: { foo: 'bar' } }, '{\n  "foo": "bar"\n}');
   });
+  describe('$jsonStringify', function() {
+    interpolateCheck({ $jsonStringify: { foo: 'bar' } }, '{"foo":"bar"}');
+  });
   describe('$template', function() {
     interpolateCheck({ $template: '' }, '');
     interpolateCheck({ $template: [ 'hello <%= user %>!', { user: 'fred' } ] }, 'hello fred!');
@@ -230,5 +235,44 @@ describe('interpolations', function() {
     interpolateCheck({ $template: [ '<% print("hello " + user); %>!', { user: 'barney' } ] }, 'hello barney!');
     interpolateCheck({ $template: [ 'hello ${ user }!', { user: 'pebbles' } ] }, 'hello pebbles!');
     interpolateCheck({ $template: [ '<%= "\\<%- value %\\>" %>', { value: 'ignored' } ] }, '<%- value %>');
+  });
+  describe('$fn', function() {
+    it('{"$fn":5}', async function() {
+      let interpolator = new Interpolator();
+      let input = { $fn: 5 };
+      input = await interpolator.preprocess(input);
+      expect(input).to.be.eql({ $fn: 5 });
+      input = await interpolator.process(input);
+      expect(input).to.be.a('function');
+      input = await Interpolator.postprocess(input);
+      expect(input).to.eql(5);
+    });
+    it('{"$fn":{"$fn":{"$fn":{"$fn":5}}}}', async function() {
+      let interpolator = new Interpolator();
+      let input = { $fn: { $fn: { $fn: { $fn: 5 } } } };
+      input = await interpolator.preprocess(input);
+      expect(input).to.be.eql({ $fn: { $fn: { $fn: { $fn: 5 } } } });
+      input = await interpolator.process(input);
+      for (let i = 0; i < 4; ++i) {
+        expect(input).to.be.a('function');
+        input = await Interpolator.postprocess(input);
+      }
+      expect(input).to.eql(5);
+    });
+    it('{"a":{"$fn":5},"b":3}', async function() {
+      let interpolator = new Interpolator();
+      let input = { a: { $fn: 5 }, b: 3 };
+      input = await interpolator.preprocess(input);
+      expect(input).to.be.eql({ a: { $fn: 5 }, b: 3 });
+      input = await interpolator.process(input);
+      expect(input.a).to.be.a('function');
+      expect(input.b).to.be.eql(3);
+      input = await Interpolator.postprocess(input);
+      expect(input).to.eql({ a: 5, b: 3 });
+    });
+    interpolateCheck({ $add: { $fn: 5 } }, 5);
+    interpolateCheck({ $split: { $fn: [ 'a-b-c', '-', 2 ] } }, [ 'a', 'b' ]);
+    interpolateCheck({ $split: [ { $fn: 'a-b-c' }, { $fn: '-' }, { $fn: 2 } ] }, [ 'a', 'b' ]);
+    interpolateCheck({ $fn: { $split: [ 'a-b-c', '-', 2 ] } }, [ 'a', 'b' ]);
   });
 });

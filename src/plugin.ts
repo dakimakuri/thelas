@@ -1,14 +1,22 @@
 export class Plugin {
-  private resources: any = {};
+  protected resources: any = {};
 
   constructor(public name: string) {
   }
 
-  addResource(name: string, ns: any) {
-    this.resources[name] = ns;
+  addResource(type: string, ns: any) {
+    this.resources[type] = ns;
   }
 
-  getResource(name: string) {
-    return this.resources[name];
+  getResource(type: string) {
+    return this.resources[type];
+  }
+
+  createResource(type: string, name: string) {
+    let resource = this.resources[type];
+    if (resource) {
+      return new resource(name);
+    }
+    return null;
   }
 }

@@ -25,6 +25,9 @@ export class Interpolator {
     // function expects 2+ arguments
     const multiArgs = _.spread;
 
+    // functionify
+    this.op('fn', (v: any) => () => v);
+
     // math
     this.op('add',      optionalArgs(_.add));
     this.op('ceil',     optionalArgs(_.ceil));
@@ -80,6 +83,7 @@ export class Interpolator {
     this.op('template', optionalArgs((str: string, data: any) => _.template(str)(data)));
 
     this.op('stringify', (o: any) => JSON.stringify(o, null, 2));
+    this.op('jsonStringify', (o: any) => JSON.stringify(o));
     this.op('findBy', (o: any) => {
       let collection = o.collection;
       let key = o.key;

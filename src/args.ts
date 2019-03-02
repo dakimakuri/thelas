@@ -2,19 +2,21 @@ import * as _ from 'lodash';
 import { validate } from 'jsonschema';
 import { type } from './manip';
 
-function recursiveKeys(o: any, path: string[] = [], schemaPath: string[] = []) {
+function recursiveKeys(args: any, o: any, path: string[] = [], schemaPath: string[] = []) {
   let keys: any[] = [];
+  let argInfo = _.get(args, schemaPath);
+  let isJson = argInfo && argInfo.type === 'json';
   if (o instanceof Function) {
     if (path.length !== 0) {
       keys.push({ path: path.join('.'), schema: schemaPath.join('.') });
     }
   } else if (o instanceof Array) {
     for (let i = 0; i < o.length; ++i) {
-      keys = _.concat(keys, recursiveKeys(o[i], _.concat(path, String(i)), _.concat(schemaPath, 'items')));
+      keys = _.concat(keys, recursiveKeys(args, o[i], _.concat(path, String(i)), _.concat(schemaPath, 'items')));
     }
-  } else if (o instanceof Object) {
+  } else if (o instanceof Object && !isJson) {
     for (let k in o) {
-      keys = _.concat(keys, recursiveKeys(o[k], _.concat(path, k), _.concat(schemaPath, ['properties', k])));
+      keys = _.concat(keys, recursiveKeys(args, o[k], _.concat(path, k), _.concat(schemaPath, ['properties', k])));
     }
   } else {
     if (path.length !== 0) {
@@ -44,7 +46,7 @@ export class Args {
     if (type(args.type) !== 'string') {
       err(`Property 'type' must be a string.`, 'type');
     }
-    if (args.type !== 'object' && args.type !== 'array' && args.type !== 'string' && args.type !== 'number' && args.type !== 'boolean') {
+    if (args.type !== 'json' && args.type !== 'object' && args.type !== 'array' && args.type !== 'string' && args.type !== 'number' && args.type !== 'boolean') {
       err(`Property 'type' of '${args.type}' is invalid.`, 'type');
     }
     if (path.length === 0 && args.type !== 'object') {
@@ -60,7 +62,12 @@ export class Args {
         }
       }
     }
-    if (args.type === 'object') {
+    if (args.type === 'json') {
+      let additional = _.pullAll(_.keys(args), ['type', 'allowNull', 'default', 'fragile', 'attributes']);
+      if (additional.length > 0) {
+        err(`Additional property '${additional[0]}' not allowed on type '${args.type}'.`, additional[0]);
+      }
+    } else if (args.type === 'object') {
       let additional = _.pullAll(_.keys(args), ['type', 'properties', 'allowNull', 'default', 'attributes']);
       if (additional.length > 0) {
         err(`Additional property '${additional[0]}' not allowed on type '${args.type}'.`, additional[0]);
@@ -106,7 +113,10 @@ export class Args {
     let schema: any = {
       type: args.type
     };
-    if (args.type === 'object') {
+    if (args.type === 'json') {
+      schema.type = 'object';
+      schema.additionalProperties = true;
+    } else if (args.type === 'object') {
       schema.additionalProperties = false;
       schema.required = [];
       schema.properties = {};
@@ -143,7 +153,7 @@ export class Args {
       validate(updated, schema, { throwError: true });
       updated = Args.applyDefaults(args, updated);
     }
-    let keys = _.uniqBy(_.concat(recursiveKeys(previous), recursiveKeys(updated)), item => item.path);
+    let keys = _.uniqBy(_.concat(recursiveKeys(args, previous), recursiveKeys(args, updated)), item => item.path);
     let fragile = [];
     if (previous && updated) {
       keys = _.filter(keys, key => {
@@ -151,7 +161,7 @@ export class Args {
         if (update instanceof Function) {
           return true;
         } else {
-          return _.get(previous, key.path) != update;
+          return !_.isEqual(_.get(previous, key.path), update);
         }
       });
     }
@@ -177,7 +187,7 @@ export class Args {
       broken,
       changes
     };
-    if (changes.length === 0) {
+    if (changes.length === 0 && previous && updated) {
       return results;
     }
     results.different = true;

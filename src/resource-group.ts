@@ -1,5 +1,6 @@
 import { Args } from './args';
 import { Plugin } from './plugin';
+import { TestPlugin } from './test';
 import { ShopifyPlugin } from './shopify';
 import { ShopifyStorefrontPlugin } from './shopify-storefront';
 import { NullPlugin } from './null';
@@ -21,6 +22,7 @@ export class ResourceGroup extends EventEmitter {
 
   constructor() {
     super();
+    this.plugins.set('test', new TestPlugin());
     this.plugins.set('shopify', new ShopifyPlugin());
     this.plugins.set('shopify-storefront', new ShopifyStorefrontPlugin());
     this.plugins.set('null', new NullPlugin());
@@ -31,6 +33,10 @@ export class ResourceGroup extends EventEmitter {
 
   addPlugin(plugin: Plugin) {
     this.plugins.set(plugin.name, plugin);
+  }
+
+  getPlugin(name: string) {
+    return this.plugins.get(name);
   }
 
   private buildResources(input: any) {
@@ -67,11 +73,10 @@ export class ResourceGroup extends EventEmitter {
       if (!plugin) {
         throw new Error('Invalid plugin: ' + spl[0]);
       }
-      let resourceType = plugin.getResource(spl[1]);
-      if (!resourceType) {
+      let resource = plugin.createResource(spl[1], name);
+      if (!resource) {
         throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
       }
-      let resource = new resourceType(name);
       for (let key in resource.options.providers) {
         let profile = 'default';
         if (input[name]) {
