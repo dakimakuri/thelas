@@ -3,8 +3,8 @@ import * as _ from 'lodash';
 import * as md5 from 'md5';
 import * as fs from 'fs-extra';
 
-type InterpolatorPreprocess = any;
-type InterpolatorFunction = any;
+export type InterpolatorPreprocess = any;
+export type InterpolatorFunction = any;
 export class Interpolator {
   private pres = new Map<string, InterpolatorPreprocess>();
   private ops = new Map<string, InterpolatorFunction>();

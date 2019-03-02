@@ -1,14 +1,27 @@
 {
   "name": "thelas",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "0.1.0",
+  "description": "Remote state as code.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
-    "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts",
-    "test": "cd test && ts-mocha ./**/*.ts"
+    "test": "cd test && ts-mocha ./**/*.ts",
+    "build": "tsc",
+    "prepublishOnly": "npm run test && npm run build"
   },
-  "author": "",
-  "license": "ISC",
+  "bin": {
+    "thelas": "./bin/cli.js"
+  },
+    "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dakimakuri/thelas.git"
+  },
+  "author": "dakimakuri",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/dakimakuri/thelas/issues"
+  },
+  "homepage": "https://github.com/dakimakuri/thelas#readme",
   "devDependencies": {
     "@types/fs-extra": "^5.0.5",
     "@types/jsonschema": "^1.1.1",

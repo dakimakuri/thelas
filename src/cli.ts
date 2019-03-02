@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import * as fs from 'fs-extra';
 import * as _ from 'lodash';
 import * as readline from 'readline';
@@ -10,13 +11,14 @@ const yargs = require('yargs');
 
 const UserCancelledError = makeError('UserCancelledError');
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
 function confirm(q: string) {
   return new Promise((resolve, reject) => {
+    const rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
     rl.question(q + ' [y/n]: ', (answer) => {
+      rl.close();
       if (answer == 'y') resolve(); else reject(new UserCancelledError());
     });
   });
@@ -119,12 +121,9 @@ let argv = yargs
     } else {
       console.error(err);
     }
-  } finally {
-    rl.close();
   }
 })
 .command('import <name> <id>', 'import resource', (yargs) => {}, async (argv) => {
-  rl.close();
   let input = await fs.readJson('input.json');
   let group = new ResourceGroup();
   try {
@@ -142,7 +141,6 @@ let argv = yargs
   await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
 })
 .command('import-list <input>', 'import resource', (yargs) => {}, async (argv) => {
-  rl.close();
   let input = await fs.readJson('input.json');
   let group = new ResourceGroup();
   try {

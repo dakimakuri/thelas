@@ -4,7 +4,7 @@
     "baseUrl": "./src",
     "outDir": "./bin",
     "sourceMap": true,
-    "declaration": false,
+    "declaration": true,
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
@@ -16,5 +16,6 @@
       "es2017",
       "dom"
     ]
-  }
+  },
+  "include": [ "./src" ]
 }
