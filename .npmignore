@@ -3,3 +3,4 @@ example/
 src/
 test/
 tsconfig.json
+*.tgz
