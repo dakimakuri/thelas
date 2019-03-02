@@ -1,12 +1,12 @@
 {
   "name": "thelas",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Remote state as code.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
     "test": "cd test && ts-mocha ./**/*.ts",
-    "build": "tsc",
+    "build": "rm -rf bin && tsc",
     "prepublishOnly": "npm run test && npm run build"
   },
   "bin": {
