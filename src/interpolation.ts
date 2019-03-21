@@ -82,6 +82,11 @@ export class Interpolator {
     // lodash templates
     this.op('template', optionalArgs((str: string, data: any) => _.template(str)(data)));
 
+    // include file
+    this.op('include', (str: string) => {
+      return fs.readJson(str);
+    });
+
     this.op('stringify', (o: any) => JSON.stringify(o, null, 2));
     this.op('jsonStringify', (o: any) => JSON.stringify(o));
     this.op('findBy', (o: any) => {
@@ -161,10 +166,10 @@ export class Interpolator {
           let interp = !(await Interpolator.done(o[op]));
           if (interp) {
             return async () => {
-              return await fn(await Interpolator.postprocess(o[op]));
+              return this.process(await fn(await Interpolator.postprocess(o[op])));
             };
           } else {
-            return await fn(o[op]);
+            return this.process(await fn(o[op]));
           }
         }
         return res;
