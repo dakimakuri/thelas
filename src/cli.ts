@@ -133,11 +133,13 @@ let argv = yargs
   argv.state = argv.file + '.state';
   await apply(argv.file, argv.state, {});
 })
-.command('import <name> <id>', 'import resource', (yargs) => {}, async (argv) => {
-  let input = await fs.readJson('input.json');
+.command('import <name> <id> [file] [state]', 'import resource', (yargs) => {}, async (argv) => {
+  argv.file = argv.file || 'thelas.json';
+  argv.state = argv.file + '.state';
+  let input = await fs.readJson(argv.file);
   let group = new ResourceGroup();
   try {
-    group.state = await fs.readJson('state.json');
+    group.state = await fs.readJson(argv.state);
   } catch (err) {
     if (_.get(err, 'code') !== 'ENOENT') {
       throw err;
@@ -148,13 +150,15 @@ let argv = yargs
   }
   let diff = await group.diff(input);
   await group.import(diff, argv.name, argv.id);
-  await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+  await fs.writeFile(argv.state, JSON.stringify(group.state, null, 2));
 })
-.command('import-list <input>', 'import resource', (yargs) => {}, async (argv) => {
-  let input = await fs.readJson('input.json');
+.command('import-list <input> [file] [state]', 'import resource', (yargs) => {}, async (argv) => {
+  argv.file = argv.file || 'thelas.json';
+  argv.state = argv.file + '.state';
+  let input = await fs.readJson(argv.file);
   let group = new ResourceGroup();
   try {
-    group.state = await fs.readJson('state.json');
+    group.state = await fs.readJson(argv.state);
   } catch (err) {
     if (_.get(err, 'code') !== 'ENOENT') {
       throw err;
@@ -175,7 +179,7 @@ let argv = yargs
       console.log(chalk.yellow('Ignoring: ' + name));
     }
   }
-  await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+  await fs.writeFile(argv.state, JSON.stringify(group.state, null, 2));
 })
 .option('verbose', {
   alias: 'v',
