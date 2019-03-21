@@ -77,7 +77,7 @@ function ref(name: string, attribute: string) {
   };
 }
 
-function apply(file: string, state: string, input: any) {
+async function apply(file: string, state: string, input: any) {
   try {
     let group = new ResourceGroup();
     group.on('create', (name: string) => console.log(`Creating ${name}...`));
