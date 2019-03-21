@@ -17,14 +17,14 @@ export class TestProvider extends Provider {
     });
   }
 
-  init(data: any) {
+  async init(data: any) {
     if (data.tag !== '') {
       data.tag = '-' + data.tag;
     }
     this.plugin.logs.push(`init.${this.name}${data.tag}`);
   }
 
-  cleanup(data: any) {
+  async cleanup(data: any) {
     this.plugin.logs.push(`cleanup.${this.name}${data.tag}`);
   }
 }

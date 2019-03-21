@@ -62,6 +62,30 @@ describe('provider', function() {
       'cleanup.provider.test.custom-foobar'
     ]);
   });
+  it('should sync with updated provider data', async function() {
+    let group = new ResourceGroup();
+    await group.apply(await group.diff({
+      'provider.test.custom': { tag: 'foobar' },
+      'test.trace.res': { provider: 'custom' }
+    }));
+    await group.apply(await group.diff({
+      'provider.test.custom': { tag: 'newbar' },
+      'test.trace.res': { provider: 'custom' }
+    }));
+    let logs = group.getPlugin('test').logs;
+    expect(logs).to.eql([
+      'init.provider.test.custom-foobar',
+      'cleanup.provider.test.custom-foobar',
+      'init.provider.test.custom-foobar',
+      'create.test.trace.res-foobar',
+      'cleanup.provider.test.custom-foobar',
+      'init.provider.test.custom-newbar',
+      'sync.test.trace.res-newbar',
+      'cleanup.provider.test.custom-newbar',
+      'init.provider.test.custom-newbar',
+      'cleanup.provider.test.custom-newbar'
+    ]);
+  });
   /*it('should create resource with provider and destroy it with provider', async function() {
     let group = new ResourceGroup();
     await group.apply(await group.diff({

@@ -2,9 +2,9 @@ export class Provider {
   constructor(name: string, public schema: any, public defaultValue: any = null) {
   }
 
-  init(data: any) {
+  async init(data: any): Promise<any> {
   }
 
-  cleanup(data: any) {
+  async cleanup(data: any): Promise<any> {
   }
 }

@@ -7,6 +7,7 @@ import { NullPlugin } from './null';
 import { FSPlugin } from './fs';
 import { DShipChinaPlugin } from './dshipchina';
 import { AWSPlugin } from './aws';
+import { DiscordPlugin } from './discord';
 import { Resource } from './resource';
 import { Interpolator } from './interpolation';
 import { validate } from 'jsonschema';
@@ -29,6 +30,7 @@ export class ResourceGroup extends EventEmitter {
     this.plugins.set('fs', new FSPlugin());
     this.plugins.set('dshipchina', new DShipChinaPlugin());
     this.plugins.set('aws', new AWSPlugin());
+    this.plugins.set('discord', new DiscordPlugin());
   }
 
   addPlugin(plugin: Plugin) {
@@ -168,10 +170,13 @@ export class ResourceGroup extends EventEmitter {
       for (let key in resource.options.providers) {
         let provider = resource.providers[key].__parent;
         if (seen.indexOf(resource.providers[key]) === -1) {
-          let data = _.cloneDeep(resource.providers[key]);
-          provider.init(data);
-          cleanup.push(() => {
-            provider.cleanup(data);
+          let originalData = _.cloneDeep(resource.providers[key]);
+          await provider.init(resource.providers[key]);
+          cleanup.push(async () => {
+            await provider.cleanup(resource.providers[key]);
+            let parent = resource.providers[key].__parent;
+            _.assign(resource.providers[key], originalData);
+            resource.providers[key].__parent = parent;
           });
           seen.push(resource.providers[key]);
         }
@@ -188,12 +193,15 @@ export class ResourceGroup extends EventEmitter {
       found.push(name);
     }
     for (let fn of cleanup) {
-      fn();
+      await fn();
     }
     function checkCircularDependency(root: string, children: any[]) {
       for (let dependency of children) {
         if (dependency === root) {
           throw new Error('Circular dependency found in ' + root);
+        }
+        if (!depends[dependency]) {
+          throw new Error('Depending on non-existent resource: ' + dependency);
         }
         checkCircularDependency(root, depends[dependency]);
       }
@@ -254,9 +262,9 @@ export class ResourceGroup extends EventEmitter {
       for (let key in resource.options.providers) {
         let provider = resource.providers[key].__parent;
         if (seen.indexOf(resource.providers[key]) === -1) {
-          provider.init(resource.providers[key]);
-          cleanup.push(() => {
-            provider.cleanup(resource.providers[key]);
+          await provider.init(resource.providers[key]);
+          cleanup.push(async () => {
+            await provider.cleanup(resource.providers[key]);
           });
           seen.push(resource.providers[key]);
         }
@@ -302,7 +310,7 @@ export class ResourceGroup extends EventEmitter {
       this.emit('done', create.name);
     }
     for (let fn of cleanup) {
-      fn();
+      await fn();
     }
   }
 
