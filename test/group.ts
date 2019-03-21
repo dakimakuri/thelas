@@ -8,18 +8,18 @@ describe('resource group', function() {
     let diff = await group.diff({
       'test.null.a': {}
     });
-    expect(diff.length).to.equal(1);
-    expect(diff[0].name).to.equal('test.null.a');
-    expect(diff[0].diff).to.be.an('object');
-    expect(diff[0].diff.different).to.equal(true);
+    expect(diff.updates.length).to.equal(1);
+    expect(diff.updates[0].name).to.equal('test.null.a');
+    expect(diff.updates[0].diff).to.be.an('object');
+    expect(diff.updates[0].diff.different).to.equal(true);
     await group.apply(diff);
-    expect(group.state['test.null.a']).to.eql({ data: {}, attributes: {} });
+    expect(group.state.resources['test.null.a']).to.eql({ data: {}, attributes: {} });
     diff = await group.diff({});
-    expect(diff.length).to.equal(1);
-    expect(diff[0].name).to.equal('test.null.a');
-    expect(diff[0].diff).to.be.an('object');
-    expect(diff[0].diff.different).to.equal(true);
+    expect(diff.updates.length).to.equal(1);
+    expect(diff.updates[0].name).to.equal('test.null.a');
+    expect(diff.updates[0].diff).to.be.an('object');
+    expect(diff.updates[0].diff.different).to.equal(true);
     await group.apply(diff);
-    expect(group.state['test.null.a']).to.eql(undefined);
+    expect(group.state.resources['test.null.a']).to.eql(undefined);
   });
 });

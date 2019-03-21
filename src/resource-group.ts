@@ -41,95 +41,168 @@ export class ResourceGroup extends EventEmitter {
     return this.plugins.get(name);
   }
 
-  private buildResources(input: any) {
-    let resources: any = {};
-    for (let key in this.state) {
-      if (key.length > 0 && key[0] === '_') {
-        continue;
-      }
-      if (input[key] == undefined) {
-        input[key] = null;
+  upgradeState() {
+    let version = this.state.version;
+    if (version === undefined) {
+      let keys = _.keys(this.state);
+      if (this.state._original instanceof Object) {
+        version = 1;
+      } else if (keys.length === 0) {
+        return;
+      } else {
+        throw new Error('Invalid state.');
       }
     }
-    let providers: any = {};
+    if (version === 1) {
+      let resources = _.omit(this.state, [ '_order', '_original' ]);
+      this.state = {
+        version: 2,
+        resources,
+        order: this.state._order || [],
+        original: this.state._original || [],
+        providers: []
+      };
+    } else {
+      return;
+    }
+    this.upgradeState();
+  }
+
+  private validateState() {
+    this.upgradeState();
+    this.state.version = 2;
+    this.state.resources = this.state.resources || {};
+    this.state.original = this.state.original || {};
+    this.state.order = this.state.order || [];
+    this.state.providers = this.state.providers || [];
+  }
+
+  private parse(input: any) {
+    let resources: any[] = [];
+    let providers: any[] = [];
+
+    // find resources and providers defined in input
     for (let name in input) {
       let spl = name.split('.');
       if (spl[0] === 'provider') {
-        if (spl.length == 2) {
+        if (spl.length === 2) {
           spl.push('default');
         }
-        if (spl.length != 3) {
+        if (spl.length !== 3) {
           throw new Error('Bad provider format: ' + name);
         }
-        providers[spl[1]] = providers[spl[1]] || {};
-        providers[spl[1]][spl[2]] = _.cloneDeep(input[name]);
-        delete input[name];
+        providers.push({
+          type: spl[1],
+          profile: spl[2],
+          fqn: `provider.${spl[1]}.${spl[2]}`,
+          data: input[name]
+        });
+      } else {
+        if (spl.length !== 3) {
+          throw new Error('Bad resource format: ' + name);
+        }
+        resources.push({
+          pluginName: spl[0],
+          type: spl[1],
+          name: spl[2],
+          fqn: name,
+          data: input[name],
+          oldData: this.state.original[name] ? this.state.original[name] : null
+        });
       }
     }
-    let createdProviders = [];
-    for (let name in input) {
-      let spl = name.split('.');
-      if (spl.length != 3) {
-        throw new Error('Bad resource format: ' + name);
+
+    // add resources that previously existed but no longer exist (deleted resources)
+    for (let name in this.state.resources) {
+      if (input[name] == undefined) {
+        let spl = name.split('.');
+        resources.push({
+          pluginName: spl[0],
+          type: spl[1],
+          name: spl[2],
+          fqn: name,
+          data: null,
+          oldData: this.state.original[name]
+        });
       }
-      let plugin = this.plugins.get(spl[0]);
-      if (!plugin) {
-        throw new Error('Invalid plugin: ' + spl[0]);
-      }
-      let resource = plugin.createResource(spl[1], name);
-      if (!resource) {
-        throw new Error('Invalid resource type: ' + spl[0] + '.' + spl[1]);
-      }
-      for (let key in resource.options.providers) {
-        let profile = 'default';
-        if (input[name]) {
-          if (input[name][key]) {
-            profile = input[name][key];
-            delete input[name][key];
-          }
-        } else if (this.state._original[name]) {
-          if (this.state._original[name][key]) {
-            profile = this.state._original[name][key];
-          }
-        } else {
-          throw new Error('Resource (' + name + ') missing provider information.');
-        }
-        let fqn = plugin.name + '.' + resource.options.providers[key] + '.' + profile;
-        let nm = resource.options.providers[key];
-        let provider = createdProviders[fqn];
+    }
+
+    // populate resource references
+    for (let resource of resources) {
+      resource.plugin = this.plugins.get(resource.pluginName);
+      resource.instance = resource.plugin.createResource(resource.type, resource.fqn);
+    }
+
+    // link resources to providers and create default providers
+    for (let resource of resources) {
+      let data = resource.data || resource.oldData;
+      resource.providers = [];
+      for (let providerName in resource.instance.options.providers) {
+        let providerType = resource.instance.options.providers[providerName];
+        let providerProfile = data[providerName] || 'default';
+        let providerFqn = `provider.${providerType}.${providerProfile}`;
+        let provider: any = _.find(providers, { fqn: providerFqn });
         if (!provider) {
-          provider = plugin.createProvider(resource.options.providers[key], 'provider.' + resource.options.providers[key] + '.' + profile);
-          createdProviders[fqn] = provider;
-        }
-        if (!providers[nm] || !providers[nm][profile]) {
-          if (profile === 'default' && provider.defaultValue) {
-            providers[nm] = providers[nm] || {};
-            providers[nm]['default'] = _.cloneDeep(provider.defaultValue);
-          } else {
-            throw new Error('Resource (' + name + ') missing a provider: ' + key);
+          provider = _.find(this.state.providers, { fqn: providerFqn });
+          if (provider) {
+            providers.push(provider);
           }
         }
-        if (providers[nm][profile]) {
-          delete providers[nm][profile]['__parent'];
+        if (!provider && providerProfile === 'default') {
+          provider = {
+            type: providerType,
+            profile: providerProfile,
+            fqn: providerFqn
+          };
+          providers.push(provider);
         }
-        validate(providers[nm][profile], provider.schema, { throwError: true });
-        providers[nm][profile].__parent = provider;
-        resource.providers[key] = providers[nm][profile];
+        if (!provider) {
+          throw new Error('Resource (' + resource.fqn + ') missing a provider: ' + providerFqn);
+        }
+        resource.providers.push({ name: providerName, ref: provider });
       }
-      resources[name] = resource;
     }
-    return resources;
+
+    // populate provider references
+    for (let provider of providers) {
+      for (let plugin of Array.from(this.plugins.values())) {
+        let instance = plugin.createProvider(provider.type, provider.fqn);
+        if (instance) {
+          provider.plugin = plugin;
+          provider.instance = instance;
+          break;
+        }
+      }
+      if (!provider.plugin) {
+        throw new Error('Failed to find plugin for provider: ' + provider.fqn);
+      }
+      if (!provider.data && provider.profile === 'default') {
+        provider.data = provider.instance.defaultValue;
+      }
+      if (!provider.data) {
+        throw new Error('No data for provider: ' + provider.fqn);
+      }
+      provider.originalData = _.cloneDeep(provider.data);
+    }
+
+    return { resources, providers };
   }
 
   async diff(input: any) {
+    // ensure state is valid
+    this.validateState();
+
+    // back input states
     input = _.cloneDeep(input);
     let originalInput = _.cloneDeep(input);
-    let syncData: any = {};
-    let resources: any = this.buildResources(input);
-    let diffs: any = {};
+
+    // parse input data and generate resources and providers
+    let { resources, providers } = this.parse(input);
+
+    // data buckets
     let depends: any = {};
-    let updates: any[] = [];
-    let found = [];
+    let syncData: any = {};
+
     let interpolator = new Interpolator();
     interpolator.pre('ref', (value: any, path: string, context: any) => {
       let index = value.indexOf(':');
@@ -142,7 +215,7 @@ export class ResourceGroup extends EventEmitter {
       return { resource, key, path, name: context.name };
     });
     interpolator.op('ref', (obj: any) => {
-      let stateDiff = syncData[obj.name] === null || !this.state._original || !this.state._original[obj.name] || !_.isEqual(_.get(this.state._original[obj.name], obj.path), _.get(originalInput[obj.name], obj.path)) || !this.state[obj.resource] || this.state[obj.resource].data === null;
+      let stateDiff = syncData[obj.name] === null || !this.state.original[obj.name] || !_.isEqual(_.get(this.state.original[obj.name], obj.path), _.get(originalInput[obj.name], obj.path)) || !this.state.resources[obj.resource] || this.state.resources[obj.resource].data === null;
       if (!stateDiff) {
         let changedAttrs: string[] | null = [];
         for (let change of diffs[obj.resource].changes) {
@@ -156,45 +229,39 @@ export class ResourceGroup extends EventEmitter {
         }
       }
       if (stateDiff) {
-        return () => this.state[obj.resource] ? _.get(this.state[obj.resource].attributes, obj.key) : null;
+        return () => this.state.resources[obj.resource] ? _.get(this.state.resources[obj.resource].attributes, obj.key) : null;
       } else {
-        return this.state[obj.resource] ? _.get(this.state[obj.resource].attributes, obj.key) : null;
+        return this.state.resources[obj.resource] ? _.get(this.state.resources[obj.resource].attributes, obj.key) : null;
       }
     });
-    let seen = [];
-    let cleanup = [];
-    for (let key in resources) {
-      let resource = resources[key];
-      let spl = key.split('.');
-      let plugin = this.plugins.get(spl[0]);
-      for (let key in resource.options.providers) {
-        let provider = resource.providers[key].__parent;
-        if (seen.indexOf(resource.providers[key]) === -1) {
-          let originalData = _.cloneDeep(resource.providers[key]);
-          await provider.init(resource.providers[key]);
-          cleanup.push(async () => {
-            await provider.cleanup(resource.providers[key]);
-            let parent = resource.providers[key].__parent;
-            _.assign(resource.providers[key], originalData);
-            resource.providers[key].__parent = parent;
-          });
-          seen.push(resource.providers[key]);
+
+
+    for (let provider of providers) {
+      await provider.instance.init(provider.data);
+    }
+
+    for (let resource of resources) {
+      for (let provider of resource.providers) {
+        resource.instance.providers[provider.name] = provider.ref.data;
+        if (resource.data) {
+          delete resource.data[provider.name];
         }
       }
-    }
-    for (let name in resources) {
-      syncData[name] = null;
-      if (this.state[name] && this.state[name].data) {
-        this.emit('sync', name);
-        syncData[name] = await resources[name].sync(_.cloneDeep(this.state[name].data), _.cloneDeep(this.state[name].attributes));
+      syncData[resource.fqn] = null;
+      if (this.state.resources[resource.fqn] && this.state.resources[resource.fqn].data) {
+        this.emit('sync', resource.fqn);
+        syncData[resource.fqn] = await resource.instance.sync(_.cloneDeep(this.state.resources[resource.fqn].data), _.cloneDeep(this.state.resources[resource.fqn].attributes));
       }
-      depends[name] = [];
-      await interpolator.preprocess(input[name], { name });
-      found.push(name);
+      depends[resource.fqn] = [];
+      await interpolator.preprocess(input[resource.fqn], { name: resource.fqn });
     }
-    for (let fn of cleanup) {
-      await fn();
+
+    for (let provider of providers) {
+      await provider.instance.cleanup(provider.data);
+      _.forOwn(provider.data, (_, key) => delete provider.data[key])
+      _.assign(provider.data, provider.originalData);
     }
+
     function checkCircularDependency(root: string, children: any[]) {
       for (let dependency of children) {
         if (dependency === root) {
@@ -206,11 +273,13 @@ export class ResourceGroup extends EventEmitter {
         checkCircularDependency(root, depends[dependency]);
       }
     }
+
     let createKeys: string[] = [];
     for (let key in depends) {
       checkCircularDependency(key, depends[key]);
       createKeys.push(key);
     }
+
     let createOrder = [];
     while (createKeys.length > 0) {
       for (let i = 0; i < createKeys.length; ++i) {
@@ -229,12 +298,15 @@ export class ResourceGroup extends EventEmitter {
         }
       }
     }
+
+    let updates: any[] = [];
+    let diffs: any = {};
     for (let name of createOrder) {
-      input[name] = await interpolator.process(input[name]);
-      let resource = resources[name];
-      diffs[name] = Args.diff(resource.args, syncData[name], input[name], false);
+      input[name] = await interpolator.process(input[name] || null);
+      let resource = _.find(resources, { fqn: name });
+      diffs[name] = Args.diff(resource.instance.args, syncData[name], input[name], false);
       updates.push({
-        resource,
+        resource: resource.instance,
         data: input[name],
         originalData: originalInput[name],
         name,
@@ -243,36 +315,24 @@ export class ResourceGroup extends EventEmitter {
         sync: syncData[name]
       });
     }
-    return updates;
+    return { providers, updates };
   }
 
-  async apply(updates: any[]) {
-    if (!(this.state._order instanceof Array)) {
-      this.state._order = [];
-    }
-    if (!(this.state._original instanceof Object)) {
-      this.state._original = {};
-    }
-    let seen = [];
-    let cleanup = [];
-    for (let update of updates) {
-      let spl = update.name.split('.');
-      let plugin = this.plugins.get(spl[0]);
-      let resource = update.resource;
-      for (let key in resource.options.providers) {
-        let provider = resource.providers[key].__parent;
-        if (seen.indexOf(resource.providers[key]) === -1) {
-          await provider.init(resource.providers[key]);
-          cleanup.push(async () => {
-            await provider.cleanup(resource.providers[key]);
-          });
-          seen.push(resource.providers[key]);
-        }
-      }
+  async apply(diff: any) {
+    this.validateState();
+    this.state.providers = [];
+    for (let provider of diff.providers) {
+      this.state.providers.push({
+        type: provider.type,
+        profile: provider.profile,
+        fqn: provider.fqn,
+        data: provider.data
+      });
+      await provider.instance.init(provider.data);
     }
     let creates: any[] = [];
     let destroys: any[] = [];
-    for (let update of updates) {
+    for (let update of diff.updates) {
       if (update.diff.different) {
         if (update.diff.create || update.diff.update) {
           let obj = _.clone(update);
@@ -282,7 +342,7 @@ export class ResourceGroup extends EventEmitter {
         if (update.diff.destroy) {
           let obj = _.clone(update);
           obj.diff = _.omit(obj.diff, ['create', 'update']);
-          obj.destroyOrder = this.state._order.indexOf(update.name);
+          obj.destroyOrder = this.state.order.indexOf(update.name);
           destroys.push(obj);
         }
       }
@@ -291,10 +351,10 @@ export class ResourceGroup extends EventEmitter {
     destroys = _.reverse(_.orderBy(destroys, 'destroyOrder'));
     for (let destroy of destroys) {
       this.emit('destroy', destroy.name);
-      await destroy.resource.apply(destroy.diff, this.state[destroy.name] ? this.state[destroy.name].attributes : null);
-      this.state._order = _.pull(this.state._order, destroy.name);
-      delete this.state[destroy.name];
-      delete this.state._original[destroy.name];
+      await destroy.resource.apply(destroy.diff, this.state.resources[destroy.name] ? this.state.resources[destroy.name].attributes : null);
+      this.state.order = _.pull(this.state.order, destroy.name);
+      delete this.state.resources[destroy.name];
+      delete this.state.original[destroy.name];
       this.emit('done', destroy.name);
     }
     for (let create of creates) {
@@ -303,29 +363,39 @@ export class ResourceGroup extends EventEmitter {
       } else {
         this.emit('create', create.name);
       }
-      let resourceState = await create.resource.apply(create.diff, this.state[create.name] ? this.state[create.name].attributes : null);
-      this.state._order = _.uniq(_.concat(this.state._order, create.name));
-      this.state[create.name] = resourceState;
-      this.state._original[create.name] = create.originalData;
+      let resourceState = await create.resource.apply(create.diff, this.state.resources[create.name] ? this.state.resources[create.name].attributes : null);
+      this.state.order = _.uniq(_.concat(this.state.order, create.name));
+      this.state.resources[create.name] = resourceState;
+      this.state.original[create.name] = create.originalData;
       this.emit('done', create.name);
     }
-    for (let fn of cleanup) {
-      await fn();
+    for (let provider of diff.providers) {
+      await provider.instance.cleanup(provider.data);
+      _.forOwn(provider.data, (_, key) => delete provider.data[key])
+      _.assign(provider.data, provider.originalData);
     }
   }
 
   async import(diff: any, name: string, id: string) {
-    let info = _.find(diff, { name }) as any;
+    this.validateState();
+    let info = _.find(diff.updates, { name }) as any;
     let resource = info.resource;
     if (!resource) {
       throw new Error('Resource does not exist in input: ' + name);
     }
+    for (let provider of diff.providers) {
+      await provider.instance.init(provider.data);
+    }
     let result = await resource.import(id);
-    this.state._original = this.state._original || {};
-    this.state._original[name] = info.originalData;
-    resource = _.find(diff, { name: name }) as any;
+    for (let provider of diff.providers) {
+      await provider.instance.cleanup(provider.data);
+      _.forOwn(provider.data, (_, key) => delete provider.data[key])
+      _.assign(provider.data, provider.originalData);
+    }
+    this.state.original[name] = info.originalData;
+    resource = _.find(diff.updates, { name: name }) as any;
     // TODO: detect if importing with out-of-date parent resource state, can get wrong values from dependencies
     _.assign(result.data, await Args.applyCalculations(info.data));
-    this.state[name] = result;
+    this.state.resources[name] = result;
   }
 }

@@ -91,21 +91,21 @@ async function apply(file: string, state: string, input: any) {
         throw err;
       }
     }
-    let updates = await group.diff(input);
+    let diff = await group.diff(input);
 
     let different = false;
-    for (let update of updates) {
+    for (let update of diff.updates) {
       if (update.diff.different) {
         prettyDiff(update.diff, update.resource.name);
         different = true;
       } else {
-        group.state[update.name].data = update.sync;
+        group.state.resources[update.name].data = update.sync;
       }
     }
     try {
       if (different) {
         await confirm('Apply these changes?');
-        await group.apply(updates);
+        await group.apply(diff);
       } else {
         console.log(chalk.green('Nothing to do.'));
       }

@@ -9,6 +9,9 @@ export class TestProvider extends Provider {
       properties: {
         tag: {
           type: 'string'
+        },
+        modified: {
+          type: 'boolean'
         }
       },
       required: ['tag']
@@ -18,6 +21,7 @@ export class TestProvider extends Provider {
   }
 
   async init(data: any) {
+    data.modified = true; // used for testing to ensure state is not tampered
     if (data.tag !== '') {
       data.tag = '-' + data.tag;
     }

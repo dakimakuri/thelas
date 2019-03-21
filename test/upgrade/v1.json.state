@@ -1,0 +1,39 @@
+{
+  "_order": [
+    "test.trace.resource"
+  ],
+  "_original": {
+    "test.trace.resource": {
+      "data": {
+        "foo": "bar"
+      },
+      "privateData": {
+        "foo": "bar"
+      },
+      "fragileData": {
+        "foo": "bar"
+      }
+    }
+  },
+  "test.trace.resource": {
+    "data": {
+      "data": {
+        "foo": "bar"
+      },
+      "privateData": {
+        "foo": "bar"
+      },
+      "fragileData": {
+        "foo": "bar"
+      }
+    },
+    "attributes": {
+      "fragileData": {
+        "foo": "bar"
+      },
+      "data": {
+        "foo": "bar"
+      }
+    }
+  }
+}

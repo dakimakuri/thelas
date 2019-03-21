@@ -115,9 +115,9 @@ describe('ordering', function() {
       'test.trace.b': { data: { bac: true }},
       'test.trace.c': { data: { $toUpper: { $jsonStringify: { $ref: 'test.trace.a:data' } } } }
     }));
-    expect(group.state['test.trace.a'].data.data).to.eql({ bac: true });
-    expect(group.state['test.trace.b'].data.data).to.eql({ bac: true });
-    expect(group.state['test.trace.c'].data.data).to.eql('{"BAC":TRUE}');
+    expect(group.state.resources['test.trace.a'].data.data).to.eql({ bac: true });
+    expect(group.state.resources['test.trace.b'].data.data).to.eql({ bac: true });
+    expect(group.state.resources['test.trace.c'].data.data).to.eql('{"BAC":TRUE}');
     await group.apply(await group.diff({}));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
@@ -256,6 +256,41 @@ describe('ordering', function() {
       'cleanup.provider.test.default',
       'init.provider.test.default',
       'update.test.trace.a',
+      'cleanup.provider.test.default'
+    ]);
+  });
+  it('import resource', async function() {
+    let group = new ResourceGroup();
+    await group.import(await group.diff({
+      'test.trace.a': {},
+      'test.trace.b': {}
+    }), 'test.trace.a', 'a');
+    await group.import(await group.diff({
+      'test.trace.a': {},
+      'test.trace.b': {}
+    }), 'test.trace.b', 'b');
+    await group.apply(await group.diff({
+      'test.trace.a': {},
+      'test.trace.b': {}
+    }));
+    let logs = group.getPlugin('test').logs;
+    expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'import.test.trace.a=a',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'sync.test.trace.a',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'import.test.trace.b=b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'sync.test.trace.a',
+      'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'cleanup.provider.test.default'
     ]);
   });

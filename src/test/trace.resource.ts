@@ -54,9 +54,9 @@ export class TraceResource extends Resource {
 
   async import(id: string) {
     let provider = this.providers['provider'];
-    this.plugin.logs.push(`import.${this.name}${provider.tag}`);
+    this.plugin.logs.push(`import.${this.name}${provider.tag}=${id}`);
     return {
-      data: {},
+      data: { imported: true },
       attributes: {}
     };
   }
