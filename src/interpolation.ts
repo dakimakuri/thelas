@@ -79,6 +79,20 @@ export class Interpolator {
     this.op('upperFirst', singleArg(_.upperFirst));
     this.op('words',      optionalArgs(_.words));
 
+    // object
+    this.op('at',          optionalArgs(_.at));
+    this.op('findKey',     optionalArgs(_.findKey));
+    this.op('findLastKey', optionalArgs(_.findLastKey));
+    this.op('get',         multiArgs(_.get));
+    this.op('has',         multiArgs(_.hasIn));
+    this.op('invert',      singleArg(_.invert));
+    this.op('keys',        singleArg(_.keysIn));
+    this.op('merge',       optionalArgs(_.merge));
+    this.op('omit',        optionalArgs(_.omit));
+    this.op('pick',        optionalArgs(_.pick));
+    this.op('toPairs',     singleArg(_.toPairsIn));
+    this.op('values',      singleArg(_.valuesIn));
+
     // lodash templates
     this.op('template', optionalArgs((str: string, data: any) => _.template(str)(data)));
 

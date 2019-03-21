@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import { Interpolator } from '../src';
+import * as _ from 'lodash';
 
 function interpolateCheck(input: any, expected: any) {
   it(JSON.stringify(input) + ' -> ' + JSON.stringify(expected), async function() {
@@ -220,6 +221,65 @@ describe('interpolations', function() {
     interpolateCheck({ $md5: '' }, 'd41d8cd98f00b204e9800998ecf8427e');
     interpolateCheck({ $md5: 'hello world' }, '5eb63bbbe01eeed093cb22bb8f5acdc3');
     interpolateCheck({ $md5: { $file: './assets/md5.data' } }, '6f5902ac237024bdd0c176cb93063dc4');
+  });
+  describe('$at', function() {
+    interpolateCheck({ $at: [ { 'a': [ { 'b': { 'c': 3 } }, 4 ] }, ['a[0].b.c', 'a[1]'] ] }, [ 3, 4 ]);
+  });
+  describe('$findKey', function() {
+    const users = {
+      barney:  { age: 36, active: true },
+      fred:    { age: 40, active: false },
+      pebbles: { age: 1,  active: true }
+    };
+    interpolateCheck({ $findKey: [ users, { age: 1, active: true } ] }, 'pebbles');
+    interpolateCheck({ $findKey: [ users, [ 'active', false ] ] }, 'fred');
+    interpolateCheck({ $findKey: [ users, 'active' ] }, 'barney');
+  });
+  describe('$findLastKey', function() {
+    const users = {
+      barney:  { age: 36, active: true },
+      fred:    { age: 40, active: false },
+      pebbles: { age: 1,  active: true }
+    };
+    interpolateCheck({ $findLastKey: [ users, { age: 36, active: true } ] }, 'barney');
+    interpolateCheck({ $findLastKey: [ users, [ 'active', false ] ] }, 'fred');
+    interpolateCheck({ $findLastKey: [ users, 'active' ] }, 'pebbles');
+  });
+  describe('$get', function() {
+    const object = { a: [ { b: { c: 3 } } ] };
+    interpolateCheck({ $get: [ object, 'a[0].b.c' ] }, 3);
+    interpolateCheck({ $get: [ object, [ 'a', '0', 'b', 'c' ] ] }, 3);
+    interpolateCheck({ $get: [ object, 'a.b.c', 'default' ] }, 'default');
+  });
+  describe('$has', function() {
+    const object = { a: { b: 2 } };
+    interpolateCheck({ $has: [ object, 'a' ] }, true);
+    interpolateCheck({ $has: [ object, 'a.b' ] }, true);
+    interpolateCheck({ $has: [ object, [ 'a', 'b' ] ] }, true);
+  });
+  describe('$invert', function() {
+    interpolateCheck({ $invert: { a: 1, b: 2, c: 1 } }, { '1': 'c', '2': 'b' });
+  });
+  describe('$keys', function() {
+    interpolateCheck({ $keys: { a: 1, b: 2, c: 3 } }, [ 'a', 'b', 'c' ]);
+  });
+  describe('$merge', function() {
+    interpolateCheck({ $merge: { a: [ { b: 2 }, { d: 4 } ] } }, { a: [ { b: 2 }, { d: 4 } ] });
+    interpolateCheck({ $merge: [ { a: [ { b: 2 }, { d: 4 } ] }, { a: [ { c: 3 }, { e: 5 } ] } ] }, { 'a': [ { 'b': 2, 'c': 3 }, { 'd': 4, 'e': 5 } ] });
+  });
+  describe('$omit', function() {
+    interpolateCheck({ $omit: { a: 1, b: '2', c: 3 } }, { a: 1, b: '2', c: 3 });
+    interpolateCheck({ $omit: [ { a: 1, b: '2', c: 3 }, [ 'a', 'c' ] ] }, { b: '2' });
+  });
+  describe('$pick', function() {
+    interpolateCheck({ $pick: { a: 1, b: '2', c: 3 } }, {});
+    interpolateCheck({ $pick: [ { a: 1, b: '2', c: 3 }, [ 'a', 'c' ] ] }, { a: 1, c: 3 });
+  });
+  describe('$toPairs', function() {
+    interpolateCheck({ $toPairs: { a: 1, b: 2, c: 3 } }, [ ['a', 1], ['b', 2], ['c', 3] ]);
+  });
+  describe('$values', function() {
+    interpolateCheck({ $values: { a: 1, b: 2, c: 3 } }, [ 1, 2, 3 ]);
   });
   describe('$stringify', function() {
     interpolateCheck({ $stringify: { foo: 'bar' } }, '{\n  "foo": "bar"\n}');

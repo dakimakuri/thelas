@@ -77,7 +77,7 @@ export class ResourceGroup extends EventEmitter {
     this.state.providers = this.state.providers || [];
   }
 
-  private parse(input: any) {
+  private async parse(input: any) {
     let resources: any[] = [];
     let providers: any[] = [];
 
@@ -141,7 +141,7 @@ export class ResourceGroup extends EventEmitter {
         let providerType = resource.instance.options.providers[providerName];
         let providerProfile = data[providerName] || 'default';
         let providerFqn = `provider.${providerType}.${providerProfile}`;
-        let provider: any = _.find(providers, { fqn: providerFqn });
+        let provider: any = _.find(providers, { fqn: providerFqn } as any);
         if (!provider) {
           provider = _.find(this.state.providers, { fqn: providerFqn });
           if (provider) {
@@ -164,6 +164,7 @@ export class ResourceGroup extends EventEmitter {
     }
 
     // populate provider references
+    let interpolator = new Interpolator();
     for (let provider of providers) {
       for (let plugin of Array.from(this.plugins.values())) {
         let instance = plugin.createProvider(provider.type, provider.fqn);
@@ -182,6 +183,9 @@ export class ResourceGroup extends EventEmitter {
       if (!provider.data) {
         throw new Error('No data for provider: ' + provider.fqn);
       }
+      provider.data = await interpolator.preprocess(provider.data);
+      provider.data = await interpolator.process(provider.data);
+      provider.data = await Interpolator.postprocess(provider.data);
       provider.originalData = _.cloneDeep(provider.data);
     }
 
@@ -197,7 +201,7 @@ export class ResourceGroup extends EventEmitter {
     let originalInput = _.cloneDeep(input);
 
     // parse input data and generate resources and providers
-    let { resources, providers } = this.parse(input);
+    let { resources, providers } = await this.parse(input);
 
     // data buckets
     let depends: any = {};

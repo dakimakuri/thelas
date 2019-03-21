@@ -215,4 +215,19 @@ describe('provider', function() {
     expect(group.state.providers[0].fqn).to.eql('provider.test.custom');
     expect(group.state.providers[0].data.modified).to.eql(false);
   });
+  it('should allow basic interpolations in provider', async function() {
+    let group = new ResourceGroup();
+    await group.apply(await group.diff({
+      'provider.test.custom': { tag: { $add: [ 'foo', 'bar' ] } },
+      'test.trace.res': { provider: 'custom' }
+    }));
+    let logs = group.getPlugin('test').logs;
+    expect(logs).to.eql([
+      'init.provider.test.custom-foobar',
+      'cleanup.provider.test.custom-foobar',
+      'init.provider.test.custom-foobar',
+      'create.test.trace.res-foobar',
+      'cleanup.provider.test.custom-foobar'
+    ]);
+  });
 });
