@@ -1,5 +1,5 @@
 import { Provider } from '../provider';
-import { Plugin } from '../plugin';
+import { TestPlugin } from './test.plugin';
 
 export class TestProvider extends Provider {
   constructor(private name: string, private plugin: TestPlugin) {

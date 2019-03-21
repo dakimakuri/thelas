@@ -1,5 +1,5 @@
 export class Provider {
-  constructor(public name: string, public schema: any, public defaultValue: any = null) {
+  constructor(name: string, public schema: any, public defaultValue: any = null) {
   }
 
   init(data: any) {
