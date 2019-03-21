@@ -77,17 +77,15 @@ function ref(name: string, attribute: string) {
   };
 }
 
-let argv = yargs
-.command('apply', 'apply changes', (yargs) => {}, async (argv) => {
+function apply(file: string, state: string, input: any) {
   try {
-    let input = await fs.readJson('input.json');
     let group = new ResourceGroup();
     group.on('create', (name: string) => console.log(`Creating ${name}...`));
     group.on('update', (name: string) => console.log(`Updating ${name}...`));
     group.on('destroy', (name: string) => console.log(`Destroying ${name}...`));
     group.on('sync', (name: string) => console.log(`Syncing ${name}...`));
     try {
-      group.state = await fs.readJson('state.json');
+      group.state = await fs.readJson(state);
     } catch (err) {
       if (_.get(err, 'code') !== 'ENOENT') {
         throw err;
@@ -112,7 +110,7 @@ let argv = yargs
         console.log(chalk.green('Nothing to do.'));
       }
     } finally {
-      await fs.writeFile('state.json', JSON.stringify(group.state, null, 2));
+      await fs.writeFile(state, JSON.stringify(group.state, null, 2));
     }
   } catch (err) {
     if (err instanceof UserCancelledError) {
@@ -122,6 +120,18 @@ let argv = yargs
       console.error(err);
     }
   }
+}
+
+let argv = yargs
+.command('apply [file] [state]', 'apply changes', (yargs) => {}, async (argv) => {
+  argv.file = argv.file || 'thelas.json';
+  argv.state = argv.file + '.state';
+  await apply(argv.file, argv.state, await fs.readJson(argv.file));
+})
+.command('destroy [file] [state]', 'destroy all resources', (yargs) => {}, async (argv) => {
+  argv.file = argv.file || 'thelas.json';
+  argv.state = argv.file + '.state';
+  await apply(argv.file, argv.state, {});
 })
 .command('import <name> <id>', 'import resource', (yargs) => {}, async (argv) => {
   let input = await fs.readJson('input.json');
@@ -171,4 +181,5 @@ let argv = yargs
   alias: 'v',
   default: true
 })
+.demandCommand()
 .argv;
