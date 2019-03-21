@@ -13,6 +13,10 @@ export class ProductResource extends Resource {
           type: 'string',
           required: true
         },
+        handle: {
+          type: 'string',
+          required: true
+        },
         body_html: {
           type: 'string',
           default: ''
@@ -144,6 +148,7 @@ export class ProductResource extends Resource {
       return null;
     }
     data.title = product.title;
+    data.handle = product.handle;
     data.body_html = product.body_html;
     data.options = [];
     for (let option of product.options) {
