@@ -3,6 +3,20 @@ import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { ShopifyProvider } from './shopify.provider';
 
+let listingsCache: any = {};
+export async function getListings(provider: any): Promise<any> {
+  if (!listingsCache[provider.shop]) {
+    listingsCache[provider.shop] = JSON.parse(await request.get(`https://${provider.shop}.myshopify.com/admin/product_listings.json`, {
+      auth: {
+        user: provider.api_key,
+        pass: provider.password,
+        sendImmediately: false
+      }
+    })).product_listings;
+  }
+  return listingsCache[provider.shop];
+}
+
 export class ProductListingResource extends Resource {
   constructor(name: string) {
     super(name, {
@@ -56,22 +70,27 @@ export class ProductListingResource extends Resource {
 
   async sync(data: any, attributes: any) {
     let shopify = this.providers['shopify'];
-    try {
-      await request.get(`https://${shopify.shop}.myshopify.com/admin/product_listings/${data.product_id}.json`, {
-        auth: {
-          user: shopify.api_key,
-          pass: shopify.password,
-          sendImmediately: false
-        }
-      });
-      return data;
-    } catch (err) {
+    let listings = await getListings(shopify);
+    if (!_.find(listings, { product_id: data.product_id })) {
       return null;
     }
+    return data;
   }
 
-  import(id: string) {
-    throw new Error('NYI');
+  async import(id: string) {
+    let shopify = this.providers['shopify'];
+    let listings = await getListings(shopify);
+    if (!_.find(listings, { product_id: id })) {
+      throw new Error('Failed to import product listing ' + id);
+    }
+    return {
+      data: {
+        product_id: id
+      },
+      attributes: {
+        product_id: id
+      }
+    }
   }
 
   private attributes(product_listing: any) {
