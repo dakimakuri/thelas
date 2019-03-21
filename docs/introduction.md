@@ -10,7 +10,7 @@ The simpliest way to use Thelas is with the CLI tool. Install using npm:
 
 ## Simple Example
 
-Create a file called ```input.json```. The following ```input.json``` will create a file on disk (hello.txt) with the contents "Hello World":
+Create a file called ```thelas.json```. The following ```thelas.json``` will create a file on disk (hello.txt) with the contents "Hello World":
 
 ```
 {
@@ -21,4 +21,4 @@ Create a file called ```input.json```. The following ```input.json``` will creat
 }
 ```
 
-Within the same folder as ```input.json```, run ```thelas apply``` to see the diff. Enter ```y``` to confirm the creation of the file. Next, modify either the filename or contents and run ```thelas apply``` again to see how the resource will be updated.
+Within the same folder as ```thelas.json```, run ```thelas apply``` to see the diff. Enter ```y``` to confirm the creation of the file. Next, modify either the filename or contents and run ```thelas apply``` again to see how the resource will be updated.
