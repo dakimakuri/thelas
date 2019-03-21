@@ -29,7 +29,7 @@ export class ProductResource extends Resource {
           allowNull: true
         },
         declared_value: {
-          type: 'string',
+          type: 'number',
           allowNull: true
         }
       }
@@ -49,7 +49,7 @@ export class ProductResource extends Resource {
       event.to.note = '';
     }
     if (event.from.declared_value && !event.to.declared_value) {
-      event.to.declared_value = '0.00';
+      event.to.declared_value = 0;
     }
     if (event.from.declared_name && !event.to.declared_name) {
       event.to.declared_name = '';
@@ -79,9 +79,9 @@ export class ProductResource extends Resource {
       data.note = '';
     }
     if (product.declare_value !== '0.00' || (!!data.declared_value && data.declared_value !== '0.00')) {
-      data.declared_value = product.declare_value;
+      data.declared_value = Number(product.declare_value);
     } else {
-      data.declared_value = '';
+      data.declared_value = null;
     }
     if (product.declare_name !== '0' || !!data.declared_name) {
       data.declared_name = product.declare_name;
