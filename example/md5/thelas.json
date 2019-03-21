@@ -1,7 +1,7 @@
 {
   "fs.file.hello": {
     "filename": "hello.txt",
-    "contents": "hello world"
+    "contents": "hello"
   },
   "fs.file.hello_sum": {
     "filename": "hello.txt.sum",

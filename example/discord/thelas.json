@@ -1,0 +1,14 @@
+{
+  "provider.discord": {
+    "token": { "$get": [ { "$include": "./config.json" }, "token" ] }
+  },
+  "discord.channel.announcements": {
+    "guild": { "$get": [ { "$include": "./config.json" }, "guild" ] },
+    "name": "announcements"
+  },
+  "discord.message.announcement": {
+    "guild": { "$get": [ { "$include": "./config.json" }, "guild" ] },
+    "channel": { "$ref": "discord.channel.announcements:id" },
+    "message": { "$trim": { "$file": "announcement.md" } }
+  }
+}
