@@ -1,7 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
-import { DShipChinaProvider } from './dshipchina.provider';
 
 let productCache: any = {};
 export async function getProducts(key: string): Promise<any> {
@@ -35,7 +34,7 @@ export class ProductResource extends Resource {
       }
     }, {
       providers: {
-        dshipchina: DShipChinaProvider
+        dshipchina: 'dshipchina'
       }
     });
   }

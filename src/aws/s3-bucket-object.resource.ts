@@ -1,7 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
-import { AWSProvider } from './aws.provider';
 import * as AWS from 'aws-sdk';
 
 const apiVersion = '2006-03-01';
@@ -29,7 +28,7 @@ export class S3BucketObjectResource extends Resource {
       }
     }, {
       providers: {
-        aws: AWSProvider
+        aws: 'aws'
       }
     });
   }

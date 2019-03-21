@@ -60,10 +60,11 @@ export class ResourceGroup extends EventEmitter {
           throw new Error('Bad provider format: ' + name);
         }
         providers[spl[1]] = providers[spl[1]] || {};
-        providers[spl[1]][spl[2]] = input[name];
+        providers[spl[1]][spl[2]] = _.cloneDeep(input[name]);
         delete input[name];
       }
     }
+    let createdProviders = [];
     for (let name in input) {
       let spl = name.split('.');
       if (spl.length != 3) {
@@ -91,12 +92,27 @@ export class ResourceGroup extends EventEmitter {
         } else {
           throw new Error('Resource (' + name + ') missing provider information.');
         }
-        let provider = resource.options.providers[key]();
-        if (!providers[provider.name] || !providers[provider.name][profile]) {
-          throw new Error('Resource (' + name + ') missing a provider: ' + key);
+        let fqn = plugin.name + '.' + resource.options.providers[key] + '.' + profile;
+        let nm = resource.options.providers[key];
+        let provider = createdProviders[fqn];
+        if (!provider) {
+          provider = plugin.createProvider(resource.options.providers[key], 'provider.' + resource.options.providers[key] + '.' + profile);
+          createdProviders[fqn] = provider;
         }
-        validate(providers[provider.name][profile], provider.schema, { throwError: true });
-        resource.providers[key] = providers[provider.name][profile];
+        if (!providers[nm] || !providers[nm][profile]) {
+          if (profile === 'default' && provider.defaultValue) {
+            providers[nm] = providers[nm] || {};
+            providers[nm]['default'] = _.cloneDeep(provider.defaultValue);
+          } else {
+            throw new Error('Resource (' + name + ') missing a provider: ' + key);
+          }
+        }
+        if (providers[nm][profile]) {
+          delete providers[nm][profile]['__parent'];
+        }
+        validate(providers[nm][profile], provider.schema, { throwError: true });
+        providers[nm][profile].__parent = provider;
+        resource.providers[key] = providers[nm][profile];
       }
       resources[name] = resource;
     }
@@ -143,6 +159,24 @@ export class ResourceGroup extends EventEmitter {
         return this.state[obj.resource] ? _.get(this.state[obj.resource].attributes, obj.key) : null;
       }
     });
+    let seen = [];
+    let cleanup = [];
+    for (let key in resources) {
+      let resource = resources[key];
+      let spl = key.split('.');
+      let plugin = this.plugins.get(spl[0]);
+      for (let key in resource.options.providers) {
+        let provider = resource.providers[key].__parent;
+        if (seen.indexOf(resource.providers[key]) === -1) {
+          let data = _.cloneDeep(resource.providers[key]);
+          provider.init(data);
+          cleanup.push(() => {
+            provider.cleanup(data);
+          });
+          seen.push(resource.providers[key]);
+        }
+      }
+    }
     for (let name in resources) {
       syncData[name] = null;
       if (this.state[name] && this.state[name].data) {
@@ -152,6 +186,9 @@ export class ResourceGroup extends EventEmitter {
       depends[name] = [];
       await interpolator.preprocess(input[name], { name });
       found.push(name);
+    }
+    for (let fn of cleanup) {
+      fn();
     }
     function checkCircularDependency(root: string, children: any[]) {
       for (let dependency of children) {
@@ -208,6 +245,23 @@ export class ResourceGroup extends EventEmitter {
     if (!(this.state._original instanceof Object)) {
       this.state._original = {};
     }
+    let seen = [];
+    let cleanup = [];
+    for (let update of updates) {
+      let spl = update.name.split('.');
+      let plugin = this.plugins.get(spl[0]);
+      let resource = update.resource;
+      for (let key in resource.options.providers) {
+        let provider = resource.providers[key].__parent;
+        if (seen.indexOf(resource.providers[key]) === -1) {
+          provider.init(resource.providers[key]);
+          cleanup.push(() => {
+            provider.cleanup(resource.providers[key]);
+          });
+          seen.push(resource.providers[key]);
+        }
+      }
+    }
     let creates: any[] = [];
     let destroys: any[] = [];
     for (let update of updates) {
@@ -246,6 +300,9 @@ export class ResourceGroup extends EventEmitter {
       this.state[create.name] = resourceState;
       this.state._original[create.name] = create.originalData;
       this.emit('done', create.name);
+    }
+    for (let fn of cleanup) {
+      fn();
     }
   }
 

@@ -3,7 +3,6 @@ import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { getProducts } from './shopify.plugin';
-import { ShopifyProvider } from './shopify.provider';
 const Jimp = require('jimp');
 
 function getImageBase64(file) {
@@ -52,7 +51,7 @@ export class ProductImageResource extends Resource {
       }
     }, {
       providers: {
-        shopify: ShopifyProvider
+        shopify: 'shopify'
       }
     });
   }

@@ -3,25 +3,6 @@ import { Plugin, ResourceGroup, Resource } from '../src';
 import * as _ from 'lodash';
 
 describe('ordering', function() {
-  it('create and destroy null resource', async function() {
-    let group = new ResourceGroup();
-    let diff = await group.diff({
-      'test.null.a': {}
-    });
-    expect(diff.length).to.equal(1);
-    expect(diff[0].name).to.equal('test.null.a');
-    expect(diff[0].diff).to.be.an('object');
-    expect(diff[0].diff.different).to.equal(true);
-    await group.apply(diff);
-    expect(group.state['test.null.a']).to.eql({ data: {}, attributes: {} });
-    diff = await group.diff({});
-    expect(diff.length).to.equal(1);
-    expect(diff[0].name).to.equal('test.null.a');
-    expect(diff[0].diff).to.be.an('object');
-    expect(diff[0].diff.different).to.equal(true);
-    await group.apply(diff);
-    expect(group.state['test.null.a']).to.eql(undefined);
-  });
   it('create resources', async function() {
     let group = new ResourceGroup();
     await group.apply(await group.diff({
@@ -31,9 +12,13 @@ describe('ordering', function() {
     }));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.a',
       'create.test.trace.b',
-      'create.test.trace.c'
+      'create.test.trace.c',
+      'cleanup.provider.test.default'
     ]);
   });
   it('destroy resources', async function() {
@@ -46,15 +31,23 @@ describe('ordering', function() {
     await group.apply(await group.diff({}));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.a',
       'create.test.trace.b',
       'create.test.trace.c',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
       'sync.test.trace.c',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'destroy.test.trace.c',
       'destroy.test.trace.b',
-      'destroy.test.trace.a'
+      'destroy.test.trace.a',
+      'cleanup.provider.test.default'
     ]);
   });
   it('update resources', async function() {
@@ -69,12 +62,20 @@ describe('ordering', function() {
     }));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.a',
       'create.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'update.test.trace.a',
-      'update.test.trace.b'
+      'update.test.trace.b',
+      'cleanup.provider.test.default'
     ]);
   });
   it('recreate broken resources', async function() {
@@ -89,14 +90,22 @@ describe('ordering', function() {
     }));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.a',
       'create.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'destroy.test.trace.b',
       'destroy.test.trace.a',
       'create.test.trace.a',
-      'create.test.trace.b'
+      'create.test.trace.b',
+      'cleanup.provider.test.default'
     ]);
   });
   it('create and destroy resources in dependency order', async function() {
@@ -112,15 +121,23 @@ describe('ordering', function() {
     await group.apply(await group.diff({}));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.b',
       'create.test.trace.a',
       'create.test.trace.c',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.b',
       'sync.test.trace.a',
       'sync.test.trace.c',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'destroy.test.trace.c',
       'destroy.test.trace.a',
-      'destroy.test.trace.b'
+      'destroy.test.trace.b',
+      'cleanup.provider.test.default'
     ]);
   });
   it('create and destroy staggered resources', async function() {
@@ -144,20 +161,40 @@ describe('ordering', function() {
     await group.apply(await group.diff({}));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.a',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.c',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.c',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'destroy.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.c',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'destroy.test.trace.c',
-      'destroy.test.trace.a'
+      'destroy.test.trace.a',
+      'cleanup.provider.test.default'
     ]);
   });
   it('cascading update', async function() {
@@ -184,22 +221,42 @@ describe('ordering', function() {
     }));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'create.test.trace.a',
       'create.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'update.test.trace.a',
       'update.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'update.test.trace.a',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'update.test.trace.a',
       'update.test.trace.b',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
       'sync.test.trace.a',
       'sync.test.trace.b',
-      'update.test.trace.a'
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'update.test.trace.a',
+      'cleanup.provider.test.default'
     ]);
   });
 });

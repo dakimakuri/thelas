@@ -2,7 +2,6 @@ import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
 import { getProducts } from './shopify.plugin';
-import { ShopifyProvider } from './shopify.provider';
 
 export class ProductResource extends Resource {
   constructor(name: string) {
@@ -86,7 +85,7 @@ export class ProductResource extends Resource {
       }
     }, {
       providers: {
-        shopify: ShopifyProvider
+        shopify: 'shopify'
       }
     });
   }

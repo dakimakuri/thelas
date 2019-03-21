@@ -236,7 +236,7 @@ describe('interpolations', function() {
     interpolateCheck({ $template: [ 'hello ${ user }!', { user: 'pebbles' } ] }, 'hello pebbles!');
     interpolateCheck({ $template: [ '<%= "\\<%- value %\\>" %>', { value: 'ignored' } ] }, '<%- value %>');
   });
-  describe.only('$include', function() {
+  describe('$include', function() {
     interpolateCheck({ $include: './assets/hello.5.json' }, { hello: 5 });
     interpolateCheck({ $include: './assets/arr.1.2.json' }, [ 1, 2 ]);
     interpolateCheck({ $add: { $include: './assets/arr.1.2.json' } }, 3);

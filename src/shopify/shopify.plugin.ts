@@ -3,6 +3,7 @@ import { Plugin } from '../plugin';
 import { ProductResource } from './product.resource';
 import { ProductImageResource } from './product-image.resource';
 import { ProductListingResource } from './product-listing.resource';
+import { ShopifyProvider } from './shopify.provider';
 
 export class ShopifyPlugin extends Plugin {
   constructor() {
@@ -10,6 +11,7 @@ export class ShopifyPlugin extends Plugin {
     this.addResource('product', ProductResource);
     this.addResource('product-image', ProductImageResource);
     this.addResource('product-listing', ProductListingResource);
+    this.addResource('shopify', ShopifyProvider);
   }
 }
 

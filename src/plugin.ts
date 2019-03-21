@@ -1,5 +1,6 @@
 export class Plugin {
   protected resources: any = {};
+  protected providers: any = {};
 
   constructor(public name: string) {
   }
@@ -16,6 +17,22 @@ export class Plugin {
     let resource = this.resources[type];
     if (resource) {
       return new resource(name);
+    }
+    return null;
+  }
+
+  addProvider(type: string, ns: any) {
+    this.providers[type] = ns;
+  }
+
+  getProvider(type: string) {
+    return this.providers[type];
+  }
+
+  createProvider(type: string, name: string) {
+    let provider = this.providers[type];
+    if (provider) {
+      return new provider(name, this);
     }
     return null;
   }

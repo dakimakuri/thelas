@@ -14,7 +14,7 @@ export class Test2Resource extends Resource {
       }
     }, {
       providers: {
-        provider: NullProvider
+        provider: 'null'
       }
     });
   }

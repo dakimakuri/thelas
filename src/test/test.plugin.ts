@@ -1,6 +1,7 @@
 import { Plugin } from '../plugin';
 import { NullResource } from './null.resource';
 import { TraceResource } from './trace.resource';
+import { TestProvider } from './test.provider';
 
 export class TestPlugin extends Plugin {
   public logs: string[] = [];
@@ -9,6 +10,7 @@ export class TestPlugin extends Plugin {
     super('test')
     this.addResource('null', NullResource);
     this.addResource('trace', TraceResource);
+    this.addProvider('test', TestProvider);
   }
 
   createResource(type: string, name: string) {

@@ -1,7 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
-import { ShopifyProvider } from './shopify.provider';
 
 let listingsCache: any = {};
 export async function getListings(provider: any): Promise<any> {
@@ -30,7 +29,7 @@ export class ProductListingResource extends Resource {
       }
     }, {
       providers: {
-        shopify: ShopifyProvider
+        shopify: 'shopify'
       }
     });
   }
