@@ -27,7 +27,7 @@ export class ProductResource extends Resource {
       }
     }, {
       providers: {
-        storefront: ShopifyStorefrontProvider
+        storefront: 'shopify-storefront'
       }
     });
   }

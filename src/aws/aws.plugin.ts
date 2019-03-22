@@ -6,6 +6,6 @@ export class AWSPlugin extends Plugin {
   constructor() {
     super('aws')
     this.addResource('s3-bucket-object', S3BucketObjectResource);
-    this.addProvider('aws', S3BucketObjectResource);
+    this.addProvider('aws', AWSProvider);
   }
 }

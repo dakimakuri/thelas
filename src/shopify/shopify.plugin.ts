@@ -11,7 +11,7 @@ export class ShopifyPlugin extends Plugin {
     this.addResource('product', ProductResource);
     this.addResource('product-image', ProductImageResource);
     this.addResource('product-listing', ProductListingResource);
-    this.addResource('shopify', ShopifyProvider);
+    this.addProvider('shopify', ShopifyProvider);
   }
 }
 
