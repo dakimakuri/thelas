@@ -1,5 +1,5 @@
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 
 export class NullResource extends Resource {
   constructor(name: string) {
@@ -16,8 +16,8 @@ export class NullResource extends Resource {
   }
   async destroy(event: ResourceDestroyEvent) {
   }
-  async sync(data: any, attributes: any) {
-    return data;
+  async sync(event: ResourceSyncEvent) {
+    return event.data;
   }
   async import(id: string) {
     return {

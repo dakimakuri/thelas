@@ -29,7 +29,7 @@ export class Interpolator {
     // eval
     this.op('', optionalArgs(async (v: string, sandbox: any) => {
       if (type(sandbox) !== 'object') {
-        sandbox = {};
+        sandbox = { _: sandbox };
       }
       sandbox = _.assign({ md5 }, _.omit(_), sandbox);
       const vm = new VM({ sandbox });
@@ -130,8 +130,8 @@ export class Interpolator {
         return f;
       }
     });
-    this.op('md5', async (o: any) => {
-      return await md5(o);
+    this.op('md5', (o: any) => {
+      return md5(o);
     });
     this.op('file', async (o: any) => {
       return (await fs.readFile(o)).toString();

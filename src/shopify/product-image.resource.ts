@@ -1,7 +1,7 @@
 declare let require: any;
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 import { getProducts } from './shopify.plugin';
 const Jimp = require('jimp');
 
@@ -77,8 +77,8 @@ export class ProductImageResource extends Resource {
 
   async update(event: ResourceUpdateEvent) {
     let shopify = this.providers['shopify'];
-    let data = await this.translate(event.to, event.attributes);
-    let image = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/products/${event.to.product_id}/images/${event.attributes.id}.json`, {
+    let data = await this.translate(event.data, event.attributes);
+    let image = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/products/${event.data.product_id}/images/${event.attributes.id}.json`, {
       auth: {
         user: shopify.api_key,
         pass: shopify.password,
@@ -96,7 +96,7 @@ export class ProductImageResource extends Resource {
 
   async destroy(event: ResourceDestroyEvent) {
     let shopify = this.providers['shopify'];
-    JSON.parse(await request.delete(`https://${shopify.shop}.myshopify.com/admin/products/${event.oldData.product_id}/images/${event.attributes.id}.json`, {
+    JSON.parse(await request.delete(`https://${shopify.shop}.myshopify.com/admin/products/${event.data.product_id}/images/${event.attributes.id}.json`, {
       auth: {
         user: shopify.api_key,
         pass: shopify.password,
@@ -105,19 +105,19 @@ export class ProductImageResource extends Resource {
     }));
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let shopify = this.providers['shopify'];
     let products = await getProducts(shopify);
-    let product = _.find(products, { id: data.product_id }) as any;
+    let product = _.find(products, { id: event.data.product_id }) as any;
     if (!product) {
       return null;
     }
-    let image = _.find(product.images, { id: attributes.id }) as any;
+    let image = _.find(product.images, { id: event.attributes.id }) as any;
     if (!image) {
       return null;
     }
-    data.alt = image.alt;
-    return data;
+    event.data.alt = image.alt;
+    return event.data;
   }
 
   async import(id: string) {

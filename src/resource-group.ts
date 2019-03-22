@@ -254,7 +254,7 @@ export class ResourceGroup extends EventEmitter {
       syncData[resource.fqn] = null;
       if (this.state.resources[resource.fqn] && this.state.resources[resource.fqn].data) {
         this.emit('sync', resource.fqn);
-        syncData[resource.fqn] = await resource.instance.sync(_.cloneDeep(this.state.resources[resource.fqn].data), _.cloneDeep(this.state.resources[resource.fqn].attributes));
+        syncData[resource.fqn] = await resource.instance.sync({ data: _.cloneDeep(this.state.resources[resource.fqn].data), attributes: _.cloneDeep(this.state.resources[resource.fqn].attributes) });
       }
       depends[resource.fqn] = [];
       await interpolator.preprocess(input[resource.fqn], { name: resource.fqn });

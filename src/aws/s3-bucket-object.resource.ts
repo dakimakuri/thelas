@@ -1,12 +1,11 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 import * as AWS from 'aws-sdk';
 
 const apiVersion = '2006-03-01';
 
 export class S3BucketObjectResource extends Resource {
-
   constructor(name: string) {
     super(name, {
       type: 'object',
@@ -59,12 +58,12 @@ export class S3BucketObjectResource extends Resource {
       region: aws.region
     });
     const params = {
-      Bucket: event.to.bucket,
-      Key: event.to.key,
-      Body: event.to.contents
+      Bucket: event.data.bucket,
+      Key: event.data.key,
+      Body: event.data.contents
     };
     await s3.putObject(params).promise();
-    return event.to;
+    return event.data;
   }
 
   async destroy(event: ResourceDestroyEvent) {
@@ -76,13 +75,13 @@ export class S3BucketObjectResource extends Resource {
       region: aws.region
     });
     const params = {
-      Bucket: event.oldData.bucket,
-      Key: event.oldData.key
+      Bucket: event.data.bucket,
+      Key: event.data.key
     };
     await s3.deleteObject(params).promise();
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     const aws = this.providers['aws'];
     const s3 = new AWS.S3({
       apiVersion,
@@ -91,12 +90,12 @@ export class S3BucketObjectResource extends Resource {
       region: aws.region
     });
     const params = {
-      Bucket: data.bucket,
-      Key: data.key
+      Bucket: event.data.bucket,
+      Key: event.data.key
     };
     let result = await s3.getObject(params).promise();
-    data.contents = result.Body.toString();
-    return data;
+    event.data.contents = result.Body.toString();
+    return event.data;
   }
 
   async import(id: string) {

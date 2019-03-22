@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 
 let productCache: any = {};
 export async function getProducts(key: string): Promise<any> {
@@ -44,16 +44,16 @@ export class ProductResource extends Resource {
   }
 
   async update(event: ResourceUpdateEvent) {
-    if (event.from.note && !event.to.note) {
-      event.to.note = '';
+    if (event.from.note && !event.data.note) {
+      event.data.note = '';
     }
-    if (event.from.declared_value && !event.to.declared_value) {
-      event.to.declared_value = 0;
+    if (event.from.declared_value && !event.data.declared_value) {
+      event.data.declared_value = 0;
     }
-    if (event.from.declared_name && !event.to.declared_name) {
-      event.to.declared_name = '';
+    if (event.from.declared_name && !event.data.declared_name) {
+      event.data.declared_name = '';
     }
-    await this.req('editproduct', event.to, event.attributes);
+    await this.req('editproduct', event.data, event.attributes);
     return event.attributes;
   }
 
@@ -61,33 +61,33 @@ export class ProductResource extends Resource {
     throw new Error('Cannot destroy DShipChina products. You must do this manually.');
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let dshipchina = this.providers['dshipchina'];
     let products = await getProducts(dshipchina.key);
-    //let product = (await req('getaproduct', data, attributes)).product;
-    let product = _.find(products, { product_id: attributes.product_id }) as any;
+    //let product = (await req('getaproduct', event.data, event.attributes)).product;
+    let product = _.find(products, { product_id: event.attributes.product_id }) as any;
     if (!product) return null;
-    if (product.product_name !== '0' || !!data.product_name) {
-      data.product_name = product.product_name;
+    if (product.product_name !== '0' || !!event.data.product_name) {
+      event.data.product_name = product.product_name;
     } else {
-      data.product_name = '';
+      event.data.product_name = '';
     }
-    if (product.note !== '0' || !!data.note) {
-      data.note = product.note;
+    if (product.note !== '0' || !!event.data.note) {
+      event.data.note = product.note;
     } else {
-      data.note = '';
+      event.data.note = '';
     }
-    if (product.declare_value !== '0.00' || (!!data.declared_value && data.declared_value !== '0.00')) {
-      data.declared_value = Number(product.declare_value);
+    if (product.declare_value !== '0.00' || (!!event.data.declared_value && event.data.declared_value !== '0.00')) {
+      event.data.declared_value = Number(product.declare_value);
     } else {
-      data.declared_value = null;
+      event.data.declared_value = null;
     }
-    if (product.declare_name !== '0' || !!data.declared_name) {
-      data.declared_name = product.declare_name;
+    if (product.declare_name !== '0' || !!event.data.declared_name) {
+      event.data.declared_name = product.declare_name;
     } else {
-      data.declared_name = '';
+      event.data.declared_name = '';
     }
-    return data;
+    return event.data;
   }
 
   async import(id: string) {

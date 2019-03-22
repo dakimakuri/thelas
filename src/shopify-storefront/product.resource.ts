@@ -1,6 +1,6 @@
 declare let require: any;
 require('isomorphic-fetch');
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 import { ShopifyStorefrontProvider } from './shopify-storefront.provider';
 const shopify = require('shopify-buy');
 
@@ -58,8 +58,8 @@ export class ProductResource extends Resource {
   async destroy(event: ResourceDestroyEvent) {
   }
 
-  async sync(data: any, attributes: any) {
-    return data;
+  async sync(event: ResourceSyncEvent) {
+    return event.data;
   }
 
   async import(id: string) {

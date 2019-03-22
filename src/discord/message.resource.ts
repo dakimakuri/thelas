@@ -1,4 +1,4 @@
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 import * as _ from 'lodash';
 
 export class MessageResource extends Resource {
@@ -40,10 +40,10 @@ export class MessageResource extends Resource {
 
   async update(event: ResourceUpdateEvent) {
     let client = this.providers['bot'].client;
-    let guild = client.guilds.get(event.to.guild);
-    let channel = await guild.channels.get(event.to.channel);
+    let guild = client.guilds.get(event.data.guild);
+    let channel = await guild.channels.get(event.data.channel);
     let message = await channel.fetchMessage(event.attributes.id);
-    await message.edit(event.to.message);
+    await message.edit(event.data.message);
     return {
       id: message.id
     };
@@ -51,22 +51,22 @@ export class MessageResource extends Resource {
 
   async destroy(event: ResourceDestroyEvent) {
     let client = this.providers['bot'].client;
-    let guild = client.guilds.get(event.oldData.guild);
-    let channel = await guild.channels.get(event.oldData.channel);
+    let guild = client.guilds.get(event.data.guild);
+    let channel = await guild.channels.get(event.data.channel);
     let message = await channel.fetchMessage(event.attributes.id);
     await message.delete();
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let client = this.providers['bot'].client;
-    let guild = client.guilds.get(data.guild);
-    let channel = await guild.channels.get(data.channel);
+    let guild = client.guilds.get(event.data.guild);
+    let channel = await guild.channels.get(event.data.channel);
     try {
-      let message = await channel.fetchMessage(attributes.id);
+      let message = await channel.fetchMessage(event.attributes.id);
       if (!message) {
         return null;
       }
-      return data;
+      return event.data;
     } catch (err) {
       return null;
     }

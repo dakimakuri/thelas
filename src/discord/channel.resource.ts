@@ -1,4 +1,4 @@
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 import * as _ from 'lodash';
 
 export class ChannelResource extends Resource {
@@ -41,13 +41,13 @@ export class ChannelResource extends Resource {
 
   async update(event: ResourceUpdateEvent) {
     let client = this.providers['bot'].client;
-    let guild = client.guilds.get(event.to.guild);
+    let guild = client.guilds.get(event.data.guild);
     let channel = await guild.channels.get(event.attributes.id);
     if (_.find(event.changes, { path: 'name' })) {
-      await channel.setName(event.to.name);
+      await channel.setName(event.data.name);
     }
     if (_.find(event.changes, { path: 'nsfw' })) {
-      await channel.setNSFW(event.to.nsfw);
+      await channel.setNSFW(event.data.nsfw);
     }
     return {
       id: channel.id
@@ -56,7 +56,7 @@ export class ChannelResource extends Resource {
 
   async destroy(event: ResourceDestroyEvent) {
     let client = this.providers['bot'].client;
-    let guild = client.guilds.get(event.oldData.guild);
+    let guild = client.guilds.get(event.data.guild);
     let channel = await guild.channels.get(event.attributes.id);
     if (!channel) {
       throw new Error('Failed to find Discord channel: ' + event.attributes.id);
@@ -64,16 +64,16 @@ export class ChannelResource extends Resource {
     await channel.delete();
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let client = this.providers['bot'].client;
-    let guild = client.guilds.get(data.guild);
-    let channel = await guild.channels.get(attributes.id);
+    let guild = client.guilds.get(event.data.guild);
+    let channel = await guild.channels.get(event.attributes.id);
     if (!channel) {
       return null;
     }
-    data.name = channel.name;
-    data.nsfw = channel.nsfw;
-    return data;
+    event.data.name = channel.name;
+    event.data.nsfw = channel.nsfw;
+    return event.data;
   }
 
   async import(id: string) {

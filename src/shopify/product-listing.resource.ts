@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 
 let listingsCache: any = {};
 export async function getListings(provider: any): Promise<any> {
@@ -34,7 +34,7 @@ export class ProductListingResource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     let shopify = this.providers['shopify'];
     let product_listing = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/product_listings/${event.data.product_id}.json`, {
       auth: {
@@ -52,13 +52,13 @@ export class ProductListingResource extends Resource {
     return this.attributes(product_listing);
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     throw new Error('Cannot update product listing.');
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
     let shopify = this.providers['shopify'];
-    await request.delete(`https://${shopify.shop}.myshopify.com/admin/product_listings/${event.oldData.product_id}.json`, {
+    await request.delete(`https://${shopify.shop}.myshopify.com/admin/product_listings/${event.data.product_id}.json`, {
       auth: {
         user: shopify.api_key,
         pass: shopify.password,
@@ -67,13 +67,13 @@ export class ProductListingResource extends Resource {
     });
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let shopify = this.providers['shopify'];
     let listings = await getListings(shopify);
-    if (!_.find(listings, { product_id: data.product_id })) {
+    if (!_.find(listings, { product_id: event.data.product_id })) {
       return null;
     }
-    return data;
+    return event.data;
   }
 
   async import(id: string) {

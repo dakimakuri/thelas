@@ -1,6 +1,6 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 import { getProducts } from './shopify.plugin';
 
 export class ProductResource extends Resource {
@@ -90,7 +90,7 @@ export class ProductResource extends Resource {
     });
   }
 
-  async create(event: any) {
+  async create(event: ResourceCreateEvent) {
     let shopify = this.providers['shopify'];
     let data = this.translate(event.data, event.attributes);
     let product = JSON.parse(await request.post(`https://${shopify.shop}.myshopify.com/admin/products.json`, {
@@ -109,9 +109,9 @@ export class ProductResource extends Resource {
     return this.attributes(product);
   }
 
-  async update(event: any) {
+  async update(event: ResourceUpdateEvent) {
     let shopify = this.providers['shopify'];
-    let data = this.translate(event.to, event.attributes);
+    let data = this.translate(event.data, event.attributes);
     let product = JSON.parse(await request.put(`https://${shopify.shop}.myshopify.com/admin/products/${event.attributes.id}.json`, {
       auth: {
         user: shopify.api_key,
@@ -128,7 +128,7 @@ export class ProductResource extends Resource {
     return this.attributes(product);
   }
 
-  async destroy(event: any) {
+  async destroy(event: ResourceDestroyEvent) {
     let shopify = this.providers['shopify'];
     JSON.parse(await request.delete(`https://${shopify.shop}.myshopify.com/admin/products/${event.attributes.id}.json`, {
       auth: {
@@ -139,25 +139,25 @@ export class ProductResource extends Resource {
     }));
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let shopify = this.providers['shopify'];
     let products = await getProducts(shopify);
-    let product = _.find(products, { id: attributes.id }) as any;
+    let product = _.find(products, { id: event.attributes.id }) as any;
     if (!product) {
       return null;
     }
-    data.title = product.title;
-    data.handle = product.handle;
-    data.body_html = product.body_html;
-    data.options = [];
+    event.data.title = product.title;
+    event.data.handle = product.handle;
+    event.data.body_html = product.body_html;
+    event.data.options = [];
     for (let option of product.options) {
-      data.options.push({
+      event.data.options.push({
         name: option.name
       });
     }
-    data.variants = [];
+    event.data.variants = [];
     for (let variant of product.variants) {
-      data.variants.push({
+      event.data.variants.push({
         option1: variant.option1,
         grams: variant.grams,
         sku: variant.sku,
@@ -168,7 +168,7 @@ export class ProductResource extends Resource {
         inventory_policy: variant.inventory_policy
       });
     }
-    return data;
+    return event.data;
   }
 
   async import(id: string) {

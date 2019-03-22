@@ -1,7 +1,7 @@
 import * as fs from 'fs-extra';
 import * as path from 'path';
 import * as _ from 'lodash';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 
 export class FileResource extends Resource {
   constructor(name: string) {
@@ -34,23 +34,23 @@ export class FileResource extends Resource {
 
   async update(event: ResourceUpdateEvent) {
     if (_.find(event.changes, { path: 'contents' })) {
-      await fs.writeFile(event.to.filename, event.to.contents);
+      await fs.writeFile(event.data.filename, event.data.contents);
     }
-    return await this.attributes(event.to);
+    return await this.attributes(event.data);
   }
 
   async destroy(event: ResourceDestroyEvent) {
-    await fs.unlink(event.oldData.filename);
+    await fs.unlink(event.data.filename);
   }
 
-  async sync(data: any) {
-    if (data == null) return;
+  async sync(event: ResourceSyncEvent) {
+    if (event.data == null) return;
     try {
-      data.contents = (await fs.readFile(data.filename)).toString();
+      event.data.contents = (await fs.readFile(event.data.filename)).toString();
     } catch (err) {
       return null;
     }
-    return data;
+    return event.data;
   }
 
   async import(id: string) {

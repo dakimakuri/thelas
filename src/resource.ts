@@ -11,15 +11,20 @@ export class ResourceCreateEvent {
 }
 
 export class ResourceUpdateEvent {
+  data: any;
   from: any;
-  to: any;
   changes: any;
   attributes: any;
 }
 
 export class ResourceDestroyEvent {
-  oldData: any;
+  data: any;
   changes: any;
+  attributes: any;
+}
+
+export class ResourceSyncEvent {
+  data: any;
   attributes: any;
 }
 
@@ -39,7 +44,7 @@ export abstract class Resource {
     let data: any = null;
     if (diff.destroy) {
       await this.destroy({
-        oldData: diff.destroy,
+        data: diff.destroy,
         changes: diff.changes,
         attributes: attributes
       });
@@ -61,7 +66,7 @@ export abstract class Resource {
       let to = await Args.applyCalculations(diff.update.to);
       attributes = await this.update({
         from: diff.update.from,
-        to,
+        data: to,
         changes: diff.changes,
         attributes: attributes
       });
@@ -73,6 +78,6 @@ export abstract class Resource {
   abstract create(event: ResourceCreateEvent): any;
   abstract update(event: ResourceUpdateEvent): any;
   abstract destroy(event: ResourceDestroyEvent): void;
-  abstract sync(data: any, attributes: any): any;
+  abstract sync(event: ResourceSyncEvent): any;
   abstract import(id: string): any;
 }

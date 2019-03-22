@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import { TestPlugin } from './test.plugin';
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 
 export class TraceResource extends Resource {
   constructor(private plugin: TestPlugin, name: string) {
@@ -46,22 +46,22 @@ export class TraceResource extends Resource {
 
   async update(event: ResourceUpdateEvent) {
     let provider = this.providers['provider'];
-    let tag = (event.to.tag ? ('-' + event.to.tag) : '') + provider.tag;
+    let tag = (event.data.tag ? ('-' + event.data.tag) : '') + provider.tag;
     this.plugin.logs.push(`update.${this.name}${tag}`);
-    return { fragileData: event.to.fragileData, data: event.to.data };
+    return { fragileData: event.data.fragileData, data: event.data.data };
   }
 
   async destroy(event: ResourceDestroyEvent) {
     let provider = this.providers['provider'];
-    let tag = (event.oldData.tag ? ('-' + event.oldData.tag) : '') + provider.tag;
+    let tag = (event.data.tag ? ('-' + event.data.tag) : '') + provider.tag;
     this.plugin.logs.push(`destroy.${this.name}${tag}`);
   }
 
-  async sync(data: any, attributes: any) {
+  async sync(event: ResourceSyncEvent) {
     let provider = this.providers['provider'];
-    let tag = (data.tag ? ('-' + data.tag) : '') + provider.tag;
+    let tag = (event.data.tag ? ('-' + event.data.tag) : '') + provider.tag;
     this.plugin.logs.push(`sync.${this.name}${tag}`);
-    return data;
+    return event.data;
   }
 
   async import(id: string) {

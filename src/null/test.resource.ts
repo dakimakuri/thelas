@@ -1,4 +1,4 @@
-import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent } from '../resource';
+import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
 
 export class TestResource extends Resource {
   constructor(name: string) {
@@ -24,21 +24,21 @@ export class TestResource extends Resource {
   }
 
   async update(event: ResourceUpdateEvent) {
-    console.log('Update:', event.to.text);
+    console.log('Update:', event.data.text);
     console.log();
     return {
-      text: event.to.text,
+      text: event.data.text,
       stuff: [ 1, 2, 3 ]
     };
   }
 
   async destroy(event: ResourceDestroyEvent) {
-    console.log('Destroy:', event.oldData.text);
+    console.log('Destroy:', event.data.text);
     console.log();
   }
 
-  async sync(data: any) {
-    return data;
+  async sync(event: ResourceSyncEvent) {
+    return event.data;
   }
 
   import(id: string) {
