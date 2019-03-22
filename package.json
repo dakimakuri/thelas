@@ -29,10 +29,12 @@
     "@types/md5": "^2.1.33",
     "@types/node": "^10.12.19",
     "@types/request-promise-native": "^1.0.15",
+    "@types/sinon": "^7.0.10",
     "chai": "^4.2.0",
     "chai-as-promised": "^7.1.1",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.9",
+    "sinon": "^7.3.0",
     "ts-mocha": "^2.0.0",
     "ts-node": "^8.0.2",
     "typescript": "^3.2.4"
