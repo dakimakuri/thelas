@@ -20,6 +20,14 @@ export class TraceResource extends Resource {
         privateData: {
           type: 'json',
           default: {}
+        },
+        tag: {
+          type: 'string',
+          default: ''
+        },
+        nullProperty: {
+          type: 'string',
+          allowNull: true
         }
       }
     }, {
@@ -31,24 +39,28 @@ export class TraceResource extends Resource {
 
   async create(event: ResourceCreateEvent) {
     let provider = this.providers['provider'];
-    this.plugin.logs.push(`create.${this.name}${provider.tag}`);
+    let tag = (event.data.tag ? ('-' + event.data.tag) : '') + provider.tag;
+    this.plugin.logs.push(`create.${this.name}${tag}`);
     return { fragileData: event.data.fragileData, data: event.data.data };
   }
 
   async update(event: ResourceUpdateEvent) {
     let provider = this.providers['provider'];
-    this.plugin.logs.push(`update.${this.name}${provider.tag}`);
+    let tag = (event.to.tag ? ('-' + event.to.tag) : '') + provider.tag;
+    this.plugin.logs.push(`update.${this.name}${tag}`);
     return { fragileData: event.to.fragileData, data: event.to.data };
   }
 
   async destroy(event: ResourceDestroyEvent) {
     let provider = this.providers['provider'];
-    this.plugin.logs.push(`destroy.${this.name}${provider.tag}`);
+    let tag = (event.oldData.tag ? ('-' + event.oldData.tag) : '') + provider.tag;
+    this.plugin.logs.push(`destroy.${this.name}${tag}`);
   }
 
   async sync(data: any, attributes: any) {
     let provider = this.providers['provider'];
-    this.plugin.logs.push(`sync.${this.name}${provider.tag}`);
+    let tag = (data.tag ? ('-' + data.tag) : '') + provider.tag;
+    this.plugin.logs.push(`sync.${this.name}${tag}`);
     return data;
   }
 

@@ -5,6 +5,8 @@ export function type(o: any) {
       return 'undefined';
   } else if (o === null) {
       return 'null';
+  } else if (o instanceof Function) {
+      return 'function';
   } else if (o instanceof Array) {
       return 'array';
   } else if (o instanceof Object) {

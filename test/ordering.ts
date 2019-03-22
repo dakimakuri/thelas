@@ -113,11 +113,11 @@ describe('ordering', function() {
     await group.apply(await group.diff({
       'test.trace.a': { data: { $ref: 'test.trace.b:data' } },
       'test.trace.b': { data: { bac: true }},
-      'test.trace.c': { data: { $toUpper: { $jsonStringify: { $ref: 'test.trace.a:data' } } } }
+      'test.trace.c': { data: { info: { $toUpper: { $jsonStringify: { $ref: 'test.trace.a:data' } } } } }
     }));
     expect(group.state.resources['test.trace.a'].data.data).to.eql({ bac: true });
     expect(group.state.resources['test.trace.b'].data.data).to.eql({ bac: true });
-    expect(group.state.resources['test.trace.c'].data.data).to.eql('{"BAC":TRUE}');
+    expect(group.state.resources['test.trace.c'].data.data).to.eql({ info: '{"BAC":TRUE}' });
     await group.apply(await group.diff({}));
     let logs = group.getPlugin('test').logs;
     expect(logs).to.eql([

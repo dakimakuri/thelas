@@ -1,5 +1,6 @@
 import { Args } from './args';
 import * as _ from 'lodash';
+import { validate } from 'jsonschema';
 
 const safeMode = false;
 
@@ -46,17 +47,21 @@ export abstract class Resource {
       data = null;
     }
     if (diff.create) {
+      let to = await Args.applyCalculations(diff.create);
+      let schema = Args.toSchema(this.args, false);
+      validate(to, schema, { throwError: true });
       attributes = await this.create({
-        data: await Args.applyCalculations(diff.create),
+        data: to,
         changes: diff.changes,
         attributes: attributes
       });
       data = diff.create;
     }
     if (diff.update) {
+      let to = await Args.applyCalculations(diff.update.to);
       attributes = await this.update({
         from: diff.update.from,
-        to: await Args.applyCalculations(diff.update.to),
+        to,
         changes: diff.changes,
         attributes: attributes
       });

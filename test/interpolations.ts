@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { Interpolator } from '../src';
+import { Interpolator, Plugin, ResourceGroup, Resource } from '../src';
 import * as _ from 'lodash';
 
 function interpolateCheck(input: any, expected: any) {
@@ -12,7 +12,7 @@ function interpolateCheck(input: any, expected: any) {
   });
 }
 
-describe('interpolations', function() {
+describe('interpolation operations', function() {
   describe('$add', function() {
     interpolateCheck({ $add: 5 }, 5);
     interpolateCheck({ $add: { $fn: 5 } }, 5);
@@ -339,5 +339,53 @@ describe('interpolations', function() {
     interpolateCheck({ $split: { $fn: [ 'a-b-c', '-', 2 ] } }, [ 'a', 'b' ]);
     interpolateCheck({ $split: [ { $fn: 'a-b-c' }, { $fn: '-' }, { $fn: 2 } ] }, [ 'a', 'b' ]);
     interpolateCheck({ $fn: { $split: [ 'a-b-c', '-', 2 ] } }, [ 'a', 'b' ]);
+  });
+});
+
+describe('evaluate interpolation', function() {
+  describe('$', function() {
+    interpolateCheck({ $: 'add(1, 4)' }, 5);
+    interpolateCheck({ $: '1 + 2' }, 3);
+    interpolateCheck({ $: [ 'a + b', { a: 1, b: 2 } ] }, 3);
+    interpolateCheck({ $: 'function a() { return 5; }; a' }, undefined);
+  });
+});
+
+describe('interpolations', function() {
+  it('should allow interpolate data', async function() {
+    let group = new ResourceGroup();
+    await group.apply(await group.diff({
+      'test.trace.a': { 'tag': { $toUpper: 'hi' } }
+    }));
+    let logs = group.getPlugin('test').logs;
+    expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'create.test.trace.a-HI',
+      'cleanup.provider.test.default'
+    ]);
+  });
+  it('should interpolate data and not update if unchanged', async function() {
+    let group = new ResourceGroup();
+    await group.apply(await group.diff({
+      'test.trace.a': { 'tag': { $toUpper: 'hi' } }
+    }));
+    await group.apply(await group.diff({
+      'test.trace.a': { 'tag': { $toUpper: 'hi' } }
+    }));
+    let logs = group.getPlugin('test').logs;
+    expect(logs).to.eql([
+      'init.provider.test.default',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'create.test.trace.a-HI',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'sync.test.trace.a-HI',
+      'cleanup.provider.test.default',
+      'init.provider.test.default',
+      'cleanup.provider.test.default'
+    ]);
   });
 });

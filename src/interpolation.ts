@@ -2,6 +2,7 @@ import { type, iterateObject } from './manip';
 import * as _ from 'lodash';
 import * as md5 from 'md5';
 import * as fs from 'fs-extra';
+import { VM } from 'vm2';
 
 export type InterpolatorPreprocess = any;
 export type InterpolatorFunction = any;
@@ -24,6 +25,18 @@ export class Interpolator {
     };
     // function expects 2+ arguments
     const multiArgs = _.spread;
+
+    // eval
+    this.op('', optionalArgs(async (v: string, sandbox: any) => {
+      if (type(sandbox) !== 'object') {
+        sandbox = {};
+      }
+      sandbox = _.assign({ md5 }, _.omit(_), sandbox);
+      const vm = new VM({ sandbox });
+      let res = await vm.run(v);
+      if (res instanceof Function) res = undefined;
+      return res;
+    }));
 
     // functionify
     this.op('fn', (v: any) => () => v);

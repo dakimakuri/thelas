@@ -30,6 +30,7 @@
     "@types/node": "^10.12.19",
     "@types/request-promise-native": "^1.0.15",
     "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
     "mocha": "^5.2.0",
     "nodemon": "^1.18.9",
     "ts-mocha": "^2.0.0",
@@ -50,6 +51,7 @@
     "request": "^2.88.0",
     "request-promise-native": "^1.0.5",
     "shopify-buy": "^2.0.1",
+    "vm2": "^3.6.10",
     "yargs": "^13.2.1"
   }
 }

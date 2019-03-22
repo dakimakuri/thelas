@@ -109,7 +109,7 @@ export class Args {
     }
   }
 
-  static toSchema(args: Args) {
+  static toSchema(args: Args, allowInterpolation = true) {
     let schema: any = {
       type: args.type
     };
@@ -121,7 +121,7 @@ export class Args {
       schema.required = [];
       schema.properties = {};
       for (let key in args.properties) {
-        schema.properties[key] = Args.toSchema(args.properties[key]);
+        schema.properties[key] = Args.toSchema(args.properties[key], allowInterpolation);
         if (args.properties[key].required) {
           schema.required.push(key);
         }
@@ -130,12 +130,17 @@ export class Args {
         delete schema['required'];
       }
     } else if (args.type === 'array') {
-      schema.items = Args.toSchema(args.items);
+      schema.items = Args.toSchema(args.items, allowInterpolation);
     }
+    schema = { anyOf: [ schema ] };
     if (args.allowNull) {
-      schema.type = ['null', schema.type, 'function'];
-    } else {
-      schema.type = [schema.type, 'function'];
+      schema.anyOf.push({ type: 'null' });
+    }
+    if (allowInterpolation) {
+      schema.anyOf.push({ type: 'function' });
+    }
+    if (schema.anyOf.length == 1) {
+      schema = schema.anyOf[0];
     }
     return schema;
   }
