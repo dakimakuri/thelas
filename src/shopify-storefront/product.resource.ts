@@ -9,6 +9,7 @@ export async function getProducts(domain: string, storefrontAccessToken: string)
   let key = storefrontAccessToken;
   let storefront = shopify.buildClient({ domain, storefrontAccessToken });
   if (!productCache[key]) {
+    // TODO: get items past the 250 limit
     productCache[key] = await storefront.product.fetchAll(250);
   }
   return productCache[key];

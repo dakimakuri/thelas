@@ -5,7 +5,8 @@ import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEven
 let listingsCache: any = {};
 export async function getListings(provider: any): Promise<any> {
   if (!listingsCache[provider.shop]) {
-    listingsCache[provider.shop] = JSON.parse(await request.get(`https://${provider.shop}.myshopify.com/admin/product_listings.json`, {
+    // TODO: get items past the limit
+    listingsCache[provider.shop] = JSON.parse(await request.get(`https://${provider.shop}.myshopify.com/admin/product_listings.json?limit=250`, {
       auth: {
         user: provider.api_key,
         pass: provider.password,

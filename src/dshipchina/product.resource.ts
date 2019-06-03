@@ -91,6 +91,7 @@ export class ProductResource extends Resource {
   }
 
   async import(id: string) {
+    id = String(id);
     let dshipchina = this.providers['dshipchina'];
     let products = await getProducts(dshipchina.key);
     let product = _.find(products, { product_id: id }) as any;
