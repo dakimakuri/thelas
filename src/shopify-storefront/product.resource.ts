@@ -60,6 +60,7 @@ export class ProductResource extends Resource {
   }
 
   async sync(event: ResourceSyncEvent) {
+    // TODO: synchronize
     return event.data;
   }
 
