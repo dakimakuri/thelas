@@ -8,6 +8,7 @@ import { FSPlugin } from './fs';
 import { DShipChinaPlugin } from './dshipchina';
 import { AWSPlugin } from './aws';
 import { DiscordPlugin } from './discord';
+import { WoocommercePlugin } from './woocommerce';
 import { Resource } from './resource';
 import { Interpolator } from './interpolation';
 import { validate } from 'jsonschema';
@@ -31,6 +32,7 @@ export class ResourceGroup extends EventEmitter {
     this.plugins.set('dshipchina', new DShipChinaPlugin());
     this.plugins.set('aws', new AWSPlugin());
     this.plugins.set('discord', new DiscordPlugin());
+    this.plugins.set('woocommerce', new WoocommercePlugin());
   }
 
   addPlugin(plugin: Plugin) {
