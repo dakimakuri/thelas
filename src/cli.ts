@@ -181,9 +181,14 @@ let argv = yargs
   }
   await fs.writeFile(argv.state, JSON.stringify(group.state, null, 2));
 })
-.option('verbose', {
-  alias: 'v',
-  default: true
+.option('insecure', {
+  describe: 'Allow invalid SSL certs',
+  type: 'boolean'
 })
 .demandCommand()
+.middleware((argv) => {
+  if (argv.insecure) {
+    (<any>process.env)["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
+  }
+})
 .argv;
