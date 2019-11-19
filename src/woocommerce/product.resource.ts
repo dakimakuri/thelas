@@ -123,6 +123,9 @@ export class ProductResource extends Resource {
   async sync(event: ResourceSyncEvent) {
     let endpoint = this.providers['woocommerce'].endpoint;
     let product = await getProduct(endpoint, event.attributes.id);
+    if (!product) {
+      return null;
+    }
     event.data.name = product.name;
     event.data.slug = product.slug;
     event.data.type = product.type;

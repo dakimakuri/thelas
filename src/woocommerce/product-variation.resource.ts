@@ -1,6 +1,7 @@
 import * as request from 'request-promise-native';
 import * as _ from 'lodash';
 import { Resource, ResourceCreateEvent, ResourceUpdateEvent, ResourceDestroyEvent, ResourceSyncEvent } from '../resource';
+import * as cheerio from 'cheerio';
 
 let cache: any = {};
 async function getVariations(endpoint: string, productId: number) {
@@ -11,7 +12,14 @@ async function getVariations(endpoint: string, productId: number) {
   let page = 1;
   let variations = [];
   while (true) {
-    let response = JSON.parse(await request.get(endpoint + '/products/' + productId + '/variations?per_page=100&page=' + page));
+    let response: string;
+    while (true) {
+      try {
+        response = JSON.parse(await request.get(endpoint + '/products/' + productId + '/variations?per_page=100&page=' + page));
+        break;
+      } catch (err) {
+      }
+    }
     if (response.length === 0) break;
     variations = _.concat(variations, response);
     page++;
@@ -133,10 +141,6 @@ export class ProductVariationResource extends Resource {
           type: 'string',
           default: ''
         },
-        shipping_class_id: {
-          type: 'number',
-          default: 0
-        },
         attributes: {
           type: 'array',
           items: {
@@ -184,16 +188,20 @@ export class ProductVariationResource extends Resource {
   }
 
   async destroy(event: ResourceDestroyEvent) {
-    /*let endpoint = this.providers['woocommerce'].endpoint;
-    await request.delete(endpoint + '/products/' + event.attributes.id);*/
-    throw new Error('NYI');
+    try {
+      let endpoint = this.providers['woocommerce'].endpoint;
+      await request.delete(endpoint + '/products/' + event.data.product_id + '/variations/' + event.attributes.id);
+    } catch (err) {
+    }
   }
 
   async sync(event: ResourceSyncEvent) {
     let endpoint = this.providers['woocommerce'].endpoint;
-    //let variation = JSON.parse(await request.get(endpoint + '/products/' + event.data.product_id + '/variations/' + event.attributes.id));
     let variation = await getVariation(endpoint, event.data.product_id, event.attributes.id);
-    event.data.description = variation.description;
+    if (!variation) {
+      return null;
+    }
+    event.data.description = cheerio.load(variation.description).text().trim().replace(/“|”/g, '"');
     event.data.sku = variation.sku;
     event.data.price = variation.price;
     event.data.regular_price = variation.regular_price;
@@ -213,7 +221,6 @@ export class ProductVariationResource extends Resource {
     event.data.weight = variation.weight;
     event.data.dimensions = variation.dimensions;
     event.data.shipping_class = variation.shipping_class;
-    event.data.shipping_class_id = variation.shipping_class_id;
     event.data.attributes = [];
     for (let attribute of variation.attributes) {
       event.data.attributes.push({
@@ -221,20 +228,12 @@ export class ProductVariationResource extends Resource {
         option: attribute.option
       });
     }
+    delete event.data['shipping_class_id'];
+    delete event.data['meta_data'];
     return event.data;
   }
 
   async import(id: string) {
-    /*let shopify = this.providers['shopify'];
-    let products = await getProducts(shopify);
-    let product = _.find(products, { id }) as any;
-    if (!product) {
-      throw new Error('Shopify Product not found: ' + id);
-    }
-    return {
-      data: {},
-      attributes: this.attributes(product)
-    };*/
     throw new Error('NYI');
   }
 
