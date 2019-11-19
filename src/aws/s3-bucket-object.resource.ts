@@ -93,9 +93,13 @@ export class S3BucketObjectResource extends Resource {
       Bucket: event.data.bucket,
       Key: event.data.key
     };
-    let result = await s3.getObject(params).promise();
-    event.data.contents = result.Body.toString();
-    return event.data;
+    try {
+      let result = await s3.getObject(params).promise();
+      event.data.contents = result.Body.toString();
+      return event.data;
+    } catch (err) {
+      return null;
+    }
   }
 
   async import(id: string) {
