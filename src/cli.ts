@@ -77,7 +77,7 @@ function ref(name: string, attribute: string) {
   };
 }
 
-async function apply(file: string, state: string, input: any) {
+async function apply(file: string, state: string, input: any, autoApply: boolean) {
   try {
     let group = new ResourceGroup();
     group.on('create', (name: string) => console.log(`Creating ${name}...`));
@@ -104,7 +104,9 @@ async function apply(file: string, state: string, input: any) {
     }
     try {
       if (different) {
-        await confirm('Apply these changes?');
+        if (!autoApply) {
+          await confirm('Apply these changes?');
+        }
         await group.apply(diff);
       } else {
         console.log(chalk.green('Nothing to do.'));
@@ -126,12 +128,12 @@ let argv = yargs
 .command('apply [file] [state]', 'apply changes', (yargs) => {}, async (argv) => {
   argv.file = argv.file || 'thelas.json';
   argv.state = argv.file + '.state';
-  await apply(argv.file, argv.state, await fs.readJson(argv.file));
+  await apply(argv.file, argv.state, await fs.readJson(argv.file), argv.yes);
 })
 .command('destroy [file] [state]', 'destroy all resources', (yargs) => {}, async (argv) => {
   argv.file = argv.file || 'thelas.json';
   argv.state = argv.file + '.state';
-  await apply(argv.file, argv.state, {});
+  await apply(argv.file, argv.state, {}, argv.yes);
 })
 .command('import <name> <id> [file] [state]', 'import resource', (yargs) => {}, async (argv) => {
   argv.file = argv.file || 'thelas.json';
@@ -183,6 +185,10 @@ let argv = yargs
 })
 .option('insecure', {
   describe: 'Allow invalid SSL certs',
+  type: 'boolean'
+})
+.option('yes', {
+  describe: 'Skip confirmation prompts',
   type: 'boolean'
 })
 .demandCommand()
